@@ -49,9 +49,19 @@ export interface ResumeResult {
   similarity: number;
 }
 
+export interface PercentileGroup {
+  /** 1, 5 or 10: the best X% of the batch */
+  pct: number;
+  count: number;
+  /** Lowest score inside the group */
+  minScore: number;
+}
+
 export interface AnalysisOutput {
   total: number;
+  /** Best results, already sorted (enough to show and to export) */
   top: ResumeResult[];
+  percentiles: PercentileGroup[];
   counts: Record<Classification, number>;
   averageScore: number;
   elapsedMs: number;
@@ -60,7 +70,8 @@ export interface AnalysisOutput {
 const WEIGHTS = { skills: 0.5, text: 0.2, experience: 0.2, education: 0.1 };
 const REFERENCE_COSINE = 0.3;
 const INFERRED_SKILL_CREDIT = 0.75;
-const TOP_LIMIT = 50;
+const TOP_LIMIT = 200;
+const PERCENTILES = [1, 5, 10];
 
 export const EDUCATION_RANK: Record<EducationKey, number> = {
   high_school: 1,
@@ -335,9 +346,17 @@ export function analyze(job: AnalysisJob, onProgress: (fraction: number) => void
   for (const r of results) counts[r.classification]++;
   const average = results.length ? results.reduce((s, r) => s + r.score, 0) / results.length : 0;
 
+  const percentiles = results.length
+    ? PERCENTILES.map((pct) => {
+        const count = Math.max(1, Math.ceil((results.length * pct) / 100));
+        return { pct, count, minScore: results[count - 1].score };
+      })
+    : [];
+
   return {
     total: results.length,
     top: results.slice(0, TOP_LIMIT),
+    percentiles,
     counts,
     averageScore: round(average, 1),
     elapsedMs: Math.round(performance.now() - started),

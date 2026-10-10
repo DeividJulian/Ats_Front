@@ -21,11 +21,12 @@ import { TabSyncService } from '../core/workers/tab-sync.service';
     }
   `,
   styles: `
-    .banner { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 90; padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: var(--shadow); max-width: calc(100vw - 36px); }
-    .offline { background: #3a2a0a; color: var(--warn); border: 1px solid rgba(251, 191, 36, 0.5); }
-    .cached { background: var(--surface-2); color: var(--info); border: 1px solid var(--border); }
-    .tabs-pill { position: fixed; left: 18px; bottom: 18px; z-index: 60; display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); font-size: 12px; color: var(--muted); }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2); }
+    .banner { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 90; padding: 10px 16px; border-radius: 14px; font-size: 14px; font-weight: 600; box-shadow: var(--shadow-lg); max-width: calc(100vw - 36px); }
+    .offline { background: var(--warn-soft); color: #92400e; }
+    .cached { background: var(--info-soft); color: #1e3a8a; }
+    .tabs-pill { position: fixed; left: 18px; bottom: 18px; z-index: 60; display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); font-size: 12px; font-weight: 600; color: var(--muted); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 3px var(--good-soft); }
+    @media (max-width: 900px) { .banner { bottom: 86px; } .tabs-pill { bottom: 86px; left: 12px; } }
   `,
 })
 export class ConnectionStatus {

@@ -1,5 +1,19 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import {
+  ArrowRight,
+  Building2,
+  GraduationCap,
+  Rocket,
+  Scale,
+  Search,
+  Sparkles,
+  Target,
+  Timer,
+  WifiOff,
+  BrainCircuit,
+  SearchX,
+} from 'lucide-angular';
 import { forkJoin } from 'rxjs';
 
 import { AuthService, homeFor } from '../../core/auth/auth.service';
@@ -8,6 +22,7 @@ import { PublicService } from '../../core/services/api.services';
 import { errorMessage } from '../../core/utils/http-error';
 import { normalize } from '../../core/workers/cv-analysis.logic';
 import { PublicHeader } from '../../layout/public-header';
+import { Icon } from '../../shared/icon';
 import { LabelPipe } from '../../shared/label.pipe';
 
 /** Ranking shown in the hero, to explain the product at a glance. */
@@ -19,7 +34,7 @@ export const SAMPLE_RANKING = [
 
 @Component({
   selector: 'app-landing',
-  imports: [RouterLink, PublicHeader, LabelPipe],
+  imports: [RouterLink, PublicHeader, LabelPipe, Icon],
   templateUrl: './landing.html',
   styleUrl: './landing.css',
 })
@@ -33,6 +48,10 @@ export class Landing implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly search = signal('');
   protected readonly sample = SAMPLE_RANKING;
+  protected readonly i = {
+    ArrowRight, Building2, GraduationCap, Rocket, Scale, Search, Sparkles, Target, Timer,
+    WifiOff, BrainCircuit, SearchX,
+  };
 
   /** Jobs whose title, description or skills contain the search text (accents ignored). */
   protected readonly visibleJobs = computed(() => {

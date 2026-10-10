@@ -83,3 +83,11 @@ export const IMPLIED_SKILLS: Record<string, string[]> = {
 };
 
 export const STOPWORDS = new Set(["a", "al", "algo", "an", "and", "ante", "antes", "aqui", "asi", "at", "aun", "bajo", "by", "cada", "como", "con", "contra", "cual", "cuando", "de", "del", "desde", "donde", "durante", "e", "el", "ella", "ellos", "en", "entre", "era", "es", "esa", "ese", "eso", "esta", "estar", "este", "esto", "for", "fue", "ha", "han", "hasta", "hay", "in", "la", "las", "le", "les", "lo", "los", "mas", "me", "mi", "mis", "mucho", "muy", "ni", "no", "nos", "nuestro", "o", "of", "on", "otro", "para", "pero", "por", "porque", "que", "se", "ser", "si", "sin", "sobre", "son", "su", "sus", "tambien", "tan", "te", "tener", "the", "tiene", "to", "todo", "tu", "un", "una", "uno", "unos", "with", "y", "ya", "yo"]);
+
+/** Professional area of each catalog skill (services/skills.py). */
+export const SKILL_AREAS: Record<string, string[]> = {
+  technology: ["python", "java", "javascript", "typescript", "c#", "c++", "php", "sql", "postgresql", "mysql", "mongodb", "html", "css", "react", "angular", "vue", "node.js", "django", "fastapi", "flask", "spring boot", "docker", "git", "linux", "aws", "azure", "api rest", "machine learning", "power bi", "tableau", "pruebas de software", "análisis de datos"],
+  administration: ["excel", "word", "power point", "contabilidad", "facturación", "nómina", "tributaria", "tesorería", "siigo", "sap", "inventarios", "logística", "compras"],
+  sales: ["ventas", "atención al cliente", "negociación", "crm", "marketing digital", "redes sociales", "seo", "diseño gráfico"],
+  soft_skills: ["gestión de proyectos", "scrum", "liderazgo", "trabajo en equipo", "comunicación", "inglés"],
+};

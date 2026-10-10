@@ -1,12 +1,9 @@
 <app-public-header />
 
 <section class="hero">
-  <div class="glow one"></div>
-  <div class="glow two"></div>
-
   <div class="hero-inner">
     <div class="hero-copy">
-      <span class="pill">✨ Selección de personal con inteligencia artificial</span>
+      <span class="pill"><app-icon [icon]="i.Sparkles" [size]="14" /> Selección de personal con inteligencia artificial</span>
       <h1>Encuentra al candidato ideal <span class="highlight">en minutos</span>, no en semanas.</h1>
       <p class="lead">
         Publica una vacante y el sistema lee las hojas de vida, detecta habilidades y ordena a los candidatos por
@@ -15,25 +12,25 @@
 
       @if (auth.isLoggedIn()) {
         <div class="cta">
-          <a class="btn primary large" [routerLink]="home()">Ir a mi panel →</a>
+          <a class="btn primary large" [routerLink]="home()">Ir a mi panel <app-icon [icon]="i.ArrowRight" [size]="18" /></a>
         </div>
       } @else {
         <div class="paths">
           <a class="path company" routerLink="/login">
-            <span class="path-icon">🏢</span>
+            <span class="path-icon"><app-icon [icon]="i.Building2" [size]="22" /></span>
             <span>
               <strong>Soy empresa</strong>
               <small>Entra y ordena candidatos con IA</small>
             </span>
-            <span class="arrow">→</span>
+            <app-icon class="arrow" [icon]="i.ArrowRight" [size]="18" />
           </a>
           <a class="path seeker" routerLink="/registro">
-            <span class="path-icon">🚀</span>
+            <span class="path-icon"><app-icon [icon]="i.Rocket" [size]="22" /></span>
             <span>
               <strong>Busco empleo</strong>
               <small>Crea tu cuenta gratis y postúlate</small>
             </span>
-            <span class="arrow">→</span>
+            <app-icon class="arrow" [icon]="i.ArrowRight" [size]="18" />
           </a>
         </div>
         <p class="demo-hint">¿Solo quieres mirar? En <a routerLink="/login">Iniciar sesión</a> hay cuentas de prueba con un clic.</p>
@@ -51,29 +48,24 @@
     <div class="hero-visual" aria-hidden="true">
       <div class="mock">
         <div class="mock-head">
-          <span class="eyebrow">Ranking automático</span>
+          <span class="badge high">● Abierta</span>
           <strong>Desarrollador Backend Python</strong>
+          <span class="small subtle">Ranking de compatibilidad</span>
         </div>
-        @for (c of sample; track c.name; let i = $index) {
-          <div class="mock-row" [style.animation-delay.ms]="i * 140">
-            <span class="pos">{{ i + 1 }}</span>
+        @for (c of sample; track c.name; let n = $index) {
+          <div class="mock-row" [style.animation-delay.ms]="n * 140">
+            <span class="avatar small" [class]="'c' + (n + 1)">{{ c.name.slice(0, 1) }}{{ c.name.split(' ')[1]?.slice(0, 1) }}</span>
             <div class="who">
               <strong>{{ c.name }}</strong>
               <div class="chips">
-                @for (s of c.skills; track s) {
-                  <span class="chip">{{ s }}</span>
-                }
+                @for (s of c.skills; track s) { <span class="chip good">✓ {{ s }}</span> }
               </div>
             </div>
-            <div class="mock-score">
-              <strong>{{ c.score }}</strong>
-              <div class="bar"><span [class]="c.classification" [style.width.%]="c.score"></span></div>
-            </div>
+            <span class="mock-score" [class]="c.classification">{{ c.score }}</span>
           </div>
         }
         <div class="mock-foot">
-          <span class="badge high">Cumple 5 de 5 habilidades</span>
-          <span class="badge new">Se infiere SQL a partir de PostgreSQL</span>
+          <span class="chip ai"><app-icon [icon]="i.Sparkles" [size]="13" /> Se infiere SQL a partir de PostgreSQL</span>
         </div>
       </div>
     </div>
@@ -86,17 +78,17 @@
     <h2>Tres pasos y tienes tu lista corta</h2>
   </div>
   <div class="steps">
-    <div class="step">
+    <div class="step card">
       <span class="num">1</span>
       <h3>Publica la vacante</h3>
       <p>Escribe el cargo y los requisitos. El sistema deduce las habilidades, o la IA redacta la oferta por ti.</p>
     </div>
-    <div class="step">
+    <div class="step card">
       <span class="num">2</span>
       <h3>Recibe hojas de vida</h3>
       <p>Los candidatos se postulan solos o subes sus PDF: se detectan nombre, correo, experiencia y habilidades.</p>
     </div>
-    <div class="step">
+    <div class="step card">
       <span class="num">3</span>
       <h3>Decide con datos</h3>
       <p>Ranking explicable, candidatos sugeridos, guía de entrevista y el embudo completo del proceso.</p>
@@ -104,10 +96,10 @@
   </div>
 
   <div class="features">
-    <div class="feature"><span>🎯</span><div><strong>Puntaje explicable</strong><p>Cada número dice qué cumple y qué le falta al candidato.</p></div></div>
-    <div class="feature"><span>⚖️</span><div><strong>Evaluación anónima</strong><p>Oculta nombres y correos para decidir solo por mérito.</p></div></div>
-    <div class="feature"><span>🧠</span><div><strong>IA que asesora</strong><p>Resúmenes, brechas y preguntas de entrevista, sin cambiar el puntaje.</p></div></div>
-    <div class="feature"><span>📶</span><div><strong>Funciona sin conexión</strong><p>Consulta los últimos datos aunque se caiga el internet.</p></div></div>
+    <div class="feature"><span class="icon-tile"><app-icon [icon]="i.Target" /></span><div><strong>Puntaje explicable</strong><p>Cada número dice qué cumple y qué le falta al candidato.</p></div></div>
+    <div class="feature"><span class="icon-tile blue"><app-icon [icon]="i.Scale" /></span><div><strong>Evaluación anónima</strong><p>Oculta nombres y correos para decidir solo por mérito.</p></div></div>
+    <div class="feature"><span class="icon-tile ai"><app-icon [icon]="i.BrainCircuit" /></span><div><strong>IA que asesora</strong><p>Resúmenes, brechas y preguntas de entrevista, sin cambiar el puntaje.</p></div></div>
+    <div class="feature"><span class="icon-tile green"><app-icon [icon]="i.WifiOff" /></span><div><strong>Funciona sin conexión</strong><p>Consulta los últimos datos aunque se caiga el internet.</p></div></div>
   </div>
 </section>
 
@@ -118,48 +110,51 @@
       <h2>Vacantes abiertas</h2>
     </div>
     <span class="spacer"></span>
-    <input class="search" type="search" placeholder="Buscar por cargo o habilidad…" aria-label="Buscar vacantes" (input)="onSearch($event)" />
+    <div class="search-box">
+      <app-icon [icon]="i.Search" />
+      <input class="search" type="search" placeholder="Buscar por cargo o habilidad…" aria-label="Buscar vacantes" (input)="onSearch($event)" />
+    </div>
   </div>
 
   @if (loading()) {
     <div class="job-grid">
-      @for (i of [1, 2, 3]; track i) {
+      @for (n of [1, 2, 3]; track n) {
         <div class="card stack"><div class="skeleton" style="width: 60%"></div><div class="skeleton"></div><div class="skeleton" style="width: 80%"></div></div>
       }
     </div>
   } @else if (error()) {
     <div class="empty">
-      <span class="big">😴</span>
       <strong>No pudimos cargar las vacantes</strong>
       <span>{{ error() }}</span>
       <button type="button" class="btn small" (click)="load()">Reintentar</button>
     </div>
   } @else if (visibleJobs().length === 0) {
     <div class="empty">
-      <span class="big">🔍</span>
+      <span class="icon-tile"><app-icon [icon]="i.SearchX" [size]="24" /></span>
       <strong>{{ search() ? 'Ninguna vacante coincide con tu búsqueda' : 'Por ahora no hay vacantes abiertas' }}</strong>
     </div>
   } @else {
     <div class="job-grid">
       @for (job of visibleJobs(); track job.id) {
         <a class="card hover job" [routerLink]="['/empleos', job.id]">
+          <div class="row"><span class="badge high">● Abierta</span></div>
           <h3>{{ job.title }}</h3>
           <p class="subtle small clamp">{{ job.description }}</p>
           <div class="chips">
             @for (skill of job.required_skills.slice(0, 5); track skill) {
-              <span class="chip">{{ skill }}</span>
+              <span class="chip outline">{{ skill }}</span>
             }
             @if (job.required_skills.length > 5) {
-              <span class="chip">+{{ job.required_skills.length - 5 }}</span>
+              <span class="chip outline">+{{ job.required_skills.length - 5 }}</span>
             }
           </div>
           <div class="meta small subtle">
-            <span>⏱ {{ job.min_experience_years ? job.min_experience_years + ' años de experiencia' : 'Sin experiencia mínima' }}</span>
+            <span><app-icon [icon]="i.Timer" [size]="14" /> {{ job.min_experience_years ? job.min_experience_years + ' años de experiencia' : 'Sin experiencia mínima' }}</span>
             @if (job.min_education_level) {
-              <span>🎓 {{ job.min_education_level | label: 'education' }}</span>
+              <span><app-icon [icon]="i.GraduationCap" [size]="14" /> {{ job.min_education_level | label: 'education' }}</span>
             }
           </div>
-          <span class="more">Ver vacante →</span>
+          <span class="more">Ver vacante <app-icon [icon]="i.ArrowRight" [size]="15" /></span>
         </a>
       }
     </div>
@@ -171,11 +166,11 @@
   <p>Crea tu cuenta en segundos o prueba el sistema con las cuentas de demostración.</p>
   <div class="row center">
     <a class="btn primary large" routerLink="/registro">Crear cuenta gratis</a>
-    <a class="btn large" routerLink="/login">Iniciar sesión</a>
+    <a class="btn outline large" routerLink="/login">Iniciar sesión</a>
   </div>
 </section>
 
 <footer class="footer">
-  <span>Talento · Portal ATS para pymes</span>
+  <span><strong>Portal ATS</strong> · Selección de personal para pymes</span>
   <span class="subtle">Proyecto de Programación Orientada a la Web · Universidad Cooperativa de Colombia</span>
 </footer>

@@ -138,7 +138,9 @@ describe('bulk analysis', () => {
     );
     expect(output.total).toBe(202);
     expect(output.top[0].name).toBe('Ana');
-    expect(output.top.length).toBeLessThanOrEqual(50);
+    expect(output.top.length).toBeLessThanOrEqual(200);
+    expect(output.percentiles.map((g) => [g.pct, g.count])).toEqual([[1, 3], [5, 11], [10, 21]]);
+    expect(output.percentiles[0].minScore).toBeGreaterThanOrEqual(output.percentiles[2].minScore);
     const scores = output.top.map((r) => r.score);
     expect(scores).toEqual([...scores].sort((a, b) => b - a));
     expect(output.counts.high + output.counts.medium + output.counts.low).toBe(202);

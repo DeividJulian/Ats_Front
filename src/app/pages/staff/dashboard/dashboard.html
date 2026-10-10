@@ -1,134 +1,159 @@
 <div class="page">
-  <div class="page-head">
-    <div>
-      <div class="eyebrow">Panel</div>
-      <h1>Hola, {{ firstName() }} 👋</h1>
-      <p class="subtle">Así va tu proceso de selección.</p>
-    </div>
+  <div class="hero">
+    <span class="badge peach"><app-icon [icon]="i.Flag" [size]="14" /> Talento local · Colombia</span>
+    <h1>Portal ATS para pymes</h1>
+    <p class="subtle">Gestión ágil de reclutamiento con inteligencia artificial</p>
+
+    @if (aiStatus(); as ai) {
+      <div class="ai-strip" [class.off]="!ai.configured">
+        <span class="live"></span>
+        <app-icon [icon]="i.Sparkles" [size]="16" />
+        <strong>{{ ai.configured ? 'IA Claude activa' : 'IA Claude sin configurar' }}</strong>
+        <span class="spacer"></span>
+        <span class="model">{{ ai.configured ? ai.model : 'Ranking propio activo' }}</span>
+      </div>
+    }
+
     <div class="row">
-      @if (aiStatus(); as ai) {
-        <span class="badge" [class.high]="ai.configured" [title]="ai.configured ? 'Modelo: ' + ai.model : 'Falta ANTHROPIC_API_KEY en el servidor'">
-          {{ ai.configured ? '🧠 IA con Claude activa' : 'IA con Claude no configurada' }}
-        </span>
-      }
       <a class="btn primary" routerLink="/app/vacantes/nueva">+ Nueva vacante</a>
+      @if (auth.isAdmin()) {
+        <button type="button" class="btn outline" [disabled]="seeding()" (click)="loadDemo()">
+          <app-icon [icon]="i.RefreshCw" [size]="16" /> {{ seeding() ? 'Cargando…' : 'Cargar datos de demostración' }}
+        </button>
+      }
     </div>
   </div>
 
   @if (loading()) {
     <div class="grid cols-4">
-      @for (i of [1, 2, 3, 4]; track i) { <div class="card stack"><div class="skeleton" style="width: 40%"></div><div class="skeleton" style="height: 30px"></div></div> }
+      @for (n of [1, 2, 3, 4]; track n) { <div class="card tint stack"><div class="skeleton" style="width: 40%"></div><div class="skeleton" style="height: 30px"></div></div> }
     </div>
   } @else if (error()) {
-    <div class="empty"><span class="big">⚠️</span><strong>{{ error() }}</strong><button type="button" class="btn small" (click)="load()">Reintentar</button></div>
+    <div class="empty"><span class="icon-tile"><app-icon [icon]="i.TriangleAlert" [size]="24" /></span><strong>{{ error() }}</strong><button type="button" class="btn small" (click)="load()">Reintentar</button></div>
   } @else if (stats(); as s) {
     @if (isEmpty()) {
-      <div class="card welcome">
-        <h2>Empecemos 🚀</h2>
-        <p class="subtle">Aún no hay vacantes ni candidatos. Crea tu primera vacante o carga los datos de demostración para ver el sistema funcionando.</p>
-        <div class="row">
-          <a class="btn primary" routerLink="/app/vacantes/nueva">Crear mi primera vacante</a>
-          @if (auth.isAdmin()) {
-            <button type="button" class="btn" [disabled]="seeding()" (click)="loadDemo()">{{ seeding() ? 'Cargando…' : 'Cargar datos de demostración' }}</button>
-          }
-        </div>
-      </div>
+      <div class="notice peach">Aún no hay vacantes ni candidatos. Crea tu primera vacante{{ auth.isAdmin() ? ' o carga los datos de demostración' : '' }} para ver el sistema funcionando.</div>
     }
 
-    <div class="grid cols-4">
-      <a class="card hover stat" routerLink="/app/vacantes">
-        <span class="icon">💼</span>
-        <span class="value">{{ s.totals.open_jobs }}<small class="subtle"> / {{ s.totals.jobs }}</small></span>
-        <span class="label">Vacantes abiertas</span>
+    <div class="grid stats">
+      <a class="card tint stat" routerLink="/app/vacantes">
+        <div class="top"><span class="icon-tile"><app-icon [icon]="i.Briefcase" /></span><span class="badge outline-pill">+{{ jobsThisMonth() }} este mes</span></div>
+        <span class="value">{{ s.totals.open_jobs }}</span>
+        <span class="label">Vacantes activas</span>
       </a>
-      <a class="card hover stat" routerLink="/app/candidatos">
-        <span class="icon">👥</span>
+      <a class="card tint stat" routerLink="/app/candidatos">
+        <div class="top"><span class="icon-tile ai"><app-icon [icon]="i.Users" /></span><span class="badge ai">IA score</span></div>
         <span class="value">{{ s.totals.candidates }}</span>
-        <span class="label">Candidatos en la base</span>
+        <span class="label">Candidatos totales</span>
       </a>
-      <div class="card stat">
-        <span class="icon">📋</span>
+      <div class="card tint stat">
+        <div class="top"><span class="icon-tile blue"><app-icon [icon]="i.ClipboardList" /></span><span class="badge outline-pill">{{ perJob() }} / vacante</span></div>
         <span class="value">{{ s.totals.applications }}</span>
         <span class="label">Postulaciones</span>
       </div>
-      <div class="card stat">
-        <span class="icon">🎉</span>
+      <div class="card tint stat">
+        <div class="top"><span class="icon-tile green"><app-icon [icon]="i.CircleCheck" /></span><span class="badge high">{{ s.funnel['hired'] }} contratados</span></div>
         <span class="value">{{ s.hire_rate_pct }}%</span>
         <span class="label">Tasa de contratación</span>
       </div>
     </div>
 
     <div class="grid cols-2">
-      <div class="card">
-        <h2>Embudo de selección</h2>
-        <div class="funnel">
-          @for (step of funnel(); track step.status) {
-            <div class="funnel-row">
-              <span class="badge" [class]="step.status">{{ step.label }}</span>
-              <div class="funnel-bar"><span [class]="step.status" [style.width.%]="step.pct"></span></div>
-              <strong>{{ step.count }}</strong>
+      <div class="card stack">
+        <div class="section-title">
+          <app-icon [icon]="i.Funnel" [size]="22" />
+          <h2>Embudo de selección</h2>
+          <span class="spacer"></span>
+          <span class="badge">{{ s.totals.applications }} evaluados</span>
+        </div>
+        <p class="subtle small">Dónde está cada postulación del proceso.</p>
+        @for (step of funnel(); track step.status) {
+          <div class="funnel-step">
+            <div class="row">
+              <span class="step-dot" [class]="step.status"></span>
+              <strong class="small">{{ step.index }}. {{ step.label }}</strong>
+              <span class="spacer"></span>
+              <span class="small subtle">{{ step.count }} {{ step.count === 1 ? 'candidato' : 'candidatos' }}</span>
+              <span class="pct" [class]="step.status">{{ step.pct }}%</span>
             </div>
-          }
+            <div class="track"><span [class]="step.status" [style.width.%]="step.pct"></span></div>
+          </div>
+        }
+        <div class="discarded">
+          <app-icon [icon]="i.CircleX" [size]="17" />
+          <span>Descartados</span>
+          <span class="spacer"></span>
+          <span class="small">{{ rejected().count }} {{ rejected().count === 1 ? 'candidato' : 'candidatos' }}</span>
+          <span class="pct rejected">{{ rejected().pct }}%</span>
         </div>
       </div>
 
-      <div class="card">
-        <h2>Habilidades más pedidas</h2>
-        @if (s.most_demanded_skills.length === 0) {
-          <p class="subtle">Cuando publiques vacantes verás aquí qué habilidades se piden más.</p>
-        } @else {
-          <div class="skills">
-            @for (item of s.most_demanded_skills; track item.skill) {
-              <div class="skill-row">
-                <span class="chip">{{ item.skill }}</span>
-                <span class="subtle small">{{ item.jobs }} {{ item.jobs === 1 ? 'vacante' : 'vacantes' }}</span>
-                <div class="bar" [title]="coverage(item.candidates_with_skill) + '% de los candidatos la tiene'"><span [class.high]="coverage(item.candidates_with_skill) >= 50" [class.low]="coverage(item.candidates_with_skill) < 20" [style.width.%]="coverage(item.candidates_with_skill)"></span></div>
-                <span class="small">{{ item.candidates_with_skill }} cand.</span>
+      <div class="card stack">
+        <div class="section-title">
+          <app-icon [icon]="i.Target" [size]="22" />
+          <h2>Demanda vs. disponibilidad</h2>
+          <span class="spacer"></span>
+          <span class="badge ai">Análisis IA</span>
+        </div>
+        <p class="subtle small">Habilidades que piden tus vacantes y qué parte de tus candidatos las tiene.</p>
+        @if (demand().length === 0) {
+          <p class="subtle small">Cuando publiques vacantes verás aquí qué habilidades escasean.</p>
+        }
+        @for (d of demand(); track d.skill) {
+          <div class="demand">
+            <div class="row">
+              <div class="stack" style="gap: 2px; flex: 1">
+                <strong class="small">{{ d.skill }}</strong>
+                <span class="small subtle">Pedida en {{ d.jobs }} {{ d.jobs === 1 ? 'vacante' : 'vacantes' }} · {{ d.candidates_with_skill }} candidatos la tienen</span>
               </div>
-            }
+              <span class="chip" [class]="d.level.kind">
+                @if (d.level.kind === 'good') { <app-icon [icon]="i.CircleCheck" [size]="13" /> } @else { <app-icon [icon]="i.TriangleAlert" [size]="13" /> }
+                {{ d.level.label }}
+              </span>
+            </div>
+            <div class="bar"><span [class.high]="d.level.kind === 'good'" [class.medium]="d.level.kind === 'warn'" [class.low]="d.level.kind === 'bad'" [style.width.%]="d.pct"></span></div>
           </div>
         }
       </div>
     </div>
 
-    <div class="card">
-      <div class="row card-title">
-        <h2>Vacantes</h2>
+    <div class="stack">
+      <div class="section-title">
+        <app-icon [icon]="i.ChartColumn" [size]="22" />
+        <h2>Resultados por vacante</h2>
         <span class="spacer"></span>
-        <a routerLink="/app/vacantes" class="small">Ver todas →</a>
+        <a class="small strong-link" routerLink="/app/vacantes">Ver todas ({{ s.totals.jobs }}) <app-icon [icon]="i.ChevronRight" [size]="15" /></a>
       </div>
-      @if (s.per_job.length === 0) {
-        <p class="subtle">Sin vacantes todavía.</p>
-      } @else {
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Vacante</th><th>Estado</th><th class="num">Postulaciones</th><th class="num">Puntaje promedio</th><th class="num">Mejor puntaje</th></tr></thead>
-            <tbody>
-              @for (job of s.per_job; track job.job_id) {
-                <tr>
-                  <td><a [routerLink]="['/app/vacantes', job.job_id]">{{ job.title }}</a></td>
-                  <td><span class="badge" [class]="job.status">{{ job.status | label: 'jobStatus' }}</span></td>
-                  <td class="num">{{ job.applications }}</td>
-                  <td class="num">{{ job.average_score }}</td>
-                  <td class="num"><strong>{{ job.max_score }}</strong></td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+      @if (jobCards().length === 0) {
+        <div class="empty"><strong>Sin vacantes todavía</strong><a class="btn primary small" routerLink="/app/vacantes/nueva">Crear vacante</a></div>
       }
-    </div>
-
-    @if (s.talent_gaps.length) {
-      <div class="card gaps">
-        <h2>⚠️ Brechas de talento</h2>
-        <p class="subtle small">Habilidades que piden tus vacantes pero que casi ningún candidato tiene. Considera ampliar la búsqueda o capacitar.</p>
-        <div class="chips">
-          @for (gap of s.talent_gaps; track gap.skill) {
-            <span class="chip bad">{{ gap.skill }} · {{ gap.candidates_with_skill }} cand.</span>
-          }
-        </div>
+      <div class="grid cols-2">
+        @for (job of jobCards(); track job.job_id) {
+          <div class="card stack job-card">
+            <div class="row">
+              <a class="job-title" [routerLink]="['/app/vacantes', job.job_id]">{{ job.title }}</a>
+              <span class="spacer"></span>
+              <span class="badge dot" [class]="job.status">{{ job.status | label: 'jobStatus' }}</span>
+            </div>
+            <span class="small subtle">{{ job.area | label: 'area' }}</span>
+            <div class="metrics">
+              <div class="metric"><span>Postulaciones</span><strong>{{ job.applications }}</strong></div>
+              <div class="metric"><span>Score prom.</span><strong class="brown">{{ job.average_score }}</strong></div>
+              <div class="metric"><span>Score máx.</span><strong class="purple">{{ job.max_score }} <app-icon [icon]="i.Sparkles" [size]="14" /></strong></div>
+            </div>
+            <div class="row">
+              <div class="avatars">
+                @for (c of job.top.slice(0, 3); track c.application_id; let n = $index) {
+                  <span class="avatar small" [class]="'c' + (n + 1)" [title]="c.name">{{ initials(c.name) }}</span>
+                }
+                @if (job.top.length > 3) { <span class="avatar small more">+{{ job.top.length - 3 }}</span> }
+              </div>
+              <span class="spacer"></span>
+              <a class="btn small chip-btn" [routerLink]="['/app/vacantes', job.job_id]"><app-icon [icon]="i.Trophy" [size]="15" /> Top candidatos</a>
+            </div>
+          </div>
+        }
       </div>
-    }
+    </div>
   }
 </div>

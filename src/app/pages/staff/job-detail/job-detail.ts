@@ -1,30 +1,79 @@
-import { Component, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ArrowLeft, ExternalLink, GraduationCap, Lock, Pencil, RefreshCw, RotateCcw, Timer } from 'lucide-angular';
 
-import { ApplicationStatus, Job, RankingItem, Suggestion } from '../../../core/models';
-import { ApplicationService, JobService } from '../../../core/services/api.services';
+import { Job } from '../../../core/models';
+import { JobService } from '../../../core/services/api.services';
 import { ToastService } from '../../../core/services/toast.service';
+import { areaOf } from '../../../core/utils/areas';
 import { errorMessage } from '../../../core/utils/http-error';
-import { NEXT_STATUSES, statusLabel } from '../../../core/utils/labels';
 import { reloadOnRemoteChanges } from '../../../core/workers/tab-sync.service';
+import { Icon } from '../../../shared/icon';
 import { LabelPipe } from '../../../shared/label.pipe';
-import { Modal } from '../../../shared/modal';
-import { ScoreBar } from '../../../shared/score-bar';
-import { ApplicationReview } from './application-review';
+import { RankingBoard } from '../ranking-board/ranking-board';
 
-type Tab = 'ranking' | 'suggested' | 'details';
+/** Readable job code, as VAC-0012. */
+export function jobCode(id: number): string {
+  return `VAC-${String(id).padStart(4, '0')}`;
+}
 
 @Component({
   selector: 'app-job-detail',
-  imports: [RouterLink, LabelPipe, ScoreBar, Modal, ApplicationReview],
-  templateUrl: './job-detail.html',
+  imports: [RouterLink, LabelPipe, Icon, RankingBoard],
+  template: `
+    <div class="page narrow">
+      @if (loading()) {
+        <div class="card stack"><div class="skeleton" style="width: 40%"></div><div class="skeleton"></div></div>
+      } @else if (error()) {
+        <div class="empty"><strong>{{ error() }}</strong><a class="btn small" routerLink="/app/vacantes">Volver a vacantes</a></div>
+      } @else if (job(); as job) {
+        <a routerLink="/app/vacantes" class="back small"><app-icon [icon]="i.ArrowLeft" [size]="15" /> Vacantes</a>
+
+        <div class="stack head">
+          <div class="row">
+            <span class="badge dot" [class]="job.status === 'open' ? 'high' : 'closed'">{{ job.status | label: 'jobStatus' }}</span>
+            <span class="badge">ID: {{ code() }}</span>
+            <span class="badge peach">{{ area() | label: 'area' }}</span>
+          </div>
+          <h1>{{ job.title }}</h1>
+          <div class="row small subtle">
+            <span class="meta"><app-icon [icon]="i.GraduationCap" [size]="15" /> {{ job.min_education_level | label: 'education' }}</span>
+            <span class="meta"><app-icon [icon]="i.Timer" [size]="15" /> {{ job.min_experience_years }} años de experiencia</span>
+          </div>
+          <div class="chips">@for (s of job.required_skills; track s) { <span class="chip outline">{{ s }}</span> }</div>
+
+          <button type="button" class="btn primary large block" [disabled]="recalculating()" (click)="recalculate()">
+            <app-icon [icon]="i.RefreshCw" [size]="18" /> {{ recalculating() ? 'Recalculando…' : 'Recalcular ranking' }}
+          </button>
+          <div class="row">
+            <a class="btn small soft" [routerLink]="['/app/vacantes', job.id, 'editar']"><app-icon [icon]="i.Pencil" [size]="15" /> Editar</a>
+            <button type="button" class="btn small outline" (click)="toggleStatus(job)">
+              <app-icon [icon]="job.status === 'open' ? i.Lock : i.RotateCcw" [size]="15" /> {{ job.status === 'open' ? 'Cerrar vacante' : 'Reabrir' }}
+            </button>
+            @if (job.status === 'open') {
+              <a class="btn small ghost" [routerLink]="['/empleos', job.id]" target="_blank"><app-icon [icon]="i.ExternalLink" [size]="15" /> Ver como candidato</a>
+            }
+          </div>
+        </div>
+
+        <app-ranking-board [job]="job" />
+
+        <details class="card">
+          <summary><strong>Descripción completa de la vacante</strong></summary>
+          <div class="stack" style="margin-top: 12px">
+            <p class="pre">{{ job.description }}</p>
+            @if (job.requirements) { <h3>Requisitos</h3><p class="pre">{{ job.requirements }}</p> }
+          </div>
+        </details>
+      }
+    </div>
+  `,
   styles: `
-    .head-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-    .pos { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-weight: 800; background: var(--surface-2); color: var(--accent); }
-    .pos.first { background: var(--accent); color: var(--accent-ink); }
-    .who { display: grid; gap: 2px; }
-    .status-select { width: auto; padding: 6px 10px; font-size: 13px; }
-    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+    .narrow { max-width: 860px; }
+    .back { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
+    .head h1 { font-size: clamp(26px, 4vw, 34px); }
+    .meta { display: inline-flex; align-items: center; gap: 5px; }
+    summary { cursor: pointer; }
   `,
 })
 export class JobDetail {
@@ -32,26 +81,23 @@ export class JobDetail {
   readonly id = input.required<string>();
 
   private readonly jobsApi = inject(JobService);
-  private readonly applications = inject(ApplicationService);
   private readonly toasts = inject(ToastService);
+  private readonly board = viewChild(RankingBoard);
 
+  protected readonly i = { ArrowLeft, ExternalLink, GraduationCap, Lock, Pencil, RefreshCw, RotateCcw, Timer };
   protected readonly job = signal<Job | null>(null);
-  protected readonly ranking = signal<RankingItem[]>([]);
-  protected readonly suggestions = signal<Suggestion[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
-  protected readonly tab = signal<Tab>('ranking');
-  protected readonly blind = signal(false);
   protected readonly recalculating = signal(false);
-  protected readonly reviewing = signal<RankingItem | null>(null);
+  protected readonly code = computed(() => jobCode(Number(this.id())));
+  protected readonly area = computed(() => areaOf(this.job()?.required_skills ?? []));
 
   constructor() {
     reloadOnRemoteChanges(() => this.load());
   }
 
   protected load(): void {
-    const id = Number(this.id());
-    this.jobsApi.get(id).subscribe({
+    this.jobsApi.get(Number(this.id())).subscribe({
       next: (job) => {
         this.job.set(job);
         this.loading.set(false);
@@ -61,59 +107,6 @@ export class JobDetail {
         this.loading.set(false);
       },
     });
-    this.loadRanking();
-    this.jobsApi.suggestedCandidates(id, 10).subscribe({ next: (s) => this.suggestions.set(s), error: () => this.suggestions.set([]) });
-  }
-
-  protected loadRanking(): void {
-    this.jobsApi.ranking(Number(this.id()), this.blind()).subscribe({
-      next: (r) => this.ranking.set(r),
-      error: (e) => this.toasts.error(errorMessage(e)),
-    });
-  }
-
-  protected toggleBlind(): void {
-    this.blind.update((b) => !b);
-    this.loadRanking();
-  }
-
-  protected nextStatuses(status: ApplicationStatus): ApplicationStatus[] {
-    return NEXT_STATUSES[status];
-  }
-
-  protected changeStatus(item: RankingItem, event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    const status = select.value as ApplicationStatus;
-    select.value = '';
-    if (!status) return;
-    this.applications.setStatus(item.application_id, status).subscribe({
-      next: () => {
-        this.toasts.ok(`${this.blind() ? 'Candidato' : item.name}: ${statusLabel(status)}`);
-        this.loadRanking();
-      },
-      error: (e) => this.toasts.error(errorMessage(e)),
-    });
-  }
-
-  protected withdraw(item: RankingItem): void {
-    if (!confirm('¿Retirar esta postulación de la vacante?')) return;
-    this.applications.withdraw(item.application_id).subscribe({
-      next: () => {
-        this.toasts.ok('Postulación retirada');
-        this.load();
-      },
-      error: (e) => this.toasts.error(errorMessage(e)),
-    });
-  }
-
-  protected applySuggested(s: Suggestion): void {
-    this.applications.apply(Number(this.id()), s.candidate_id).subscribe({
-      next: (a) => {
-        this.toasts.ok(`${s.name} quedó postulado con ${a.score} puntos`);
-        this.load();
-      },
-      error: (e) => this.toasts.error(errorMessage(e)),
-    });
   }
 
   protected recalculate(): void {
@@ -122,7 +115,7 @@ export class JobDetail {
       next: (r) => {
         this.recalculating.set(false);
         this.toasts.ok(`Ranking recalculado (${r.updated_applications} postulaciones)`);
-        this.loadRanking();
+        this.board()?.load();
       },
       error: (e) => {
         this.recalculating.set(false);

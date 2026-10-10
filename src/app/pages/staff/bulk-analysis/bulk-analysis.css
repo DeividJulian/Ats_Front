@@ -1,9 +1,55 @@
-.layout { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; align-items: start; }
-.value { color: var(--accent); }
-.heart { border-color: rgba(124, 92, 255, 0.45); }
-.track { position: relative; height: 34px; width: 100%; max-width: 236px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
-.ball { position: absolute; left: 4px; top: 4px; width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #ff7a45); }
-.top { display: grid; gap: 8px; max-height: 520px; overflow-y: auto; padding-right: 4px; }
-.top-row { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); }
-.pos { width: 26px; text-align: center; font-weight: 800; color: var(--accent); }
-@media (max-width: 960px) { .layout { grid-template-columns: 1fr; } }
+.narrow { max-width: 860px; }
+.fps { justify-self: start; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--good-soft); color: var(--good); }
+.fps.bad { background: var(--bad-soft); color: var(--bad); }
+.fps .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.big { font-size: 22px; letter-spacing: -0.02em; }
+.icon-tile.round { border-radius: 50%; }
+.strong { font-weight: 700; }
+.orange { color: var(--accent-2); }
+
+.step-num { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font-weight: 800; font-size: 13px; background: var(--peach); color: var(--peach-ink); }
+.job-select { position: relative; display: flex; align-items: center; }
+.job-select app-icon { position: absolute; left: 14px; color: var(--primary); pointer-events: none; }
+.job-select select { padding: 14px 14px 14px 42px; font-weight: 700; background: var(--surface-2); }
+.weight { display: grid; gap: 4px; }
+
+.volume { font-size: 22px; color: var(--ai); }
+.presets { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.presets button { padding: 9px 0; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); font: inherit; font-weight: 700; cursor: pointer; color: var(--text); }
+.presets button.active { background: var(--ai); border-color: var(--ai); color: #fff; }
+
+.ready { justify-self: start; }
+.dot-live { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.run { display: flex; align-items: center; gap: 14px; width: 100%; padding: 18px; border-radius: 16px; border: none; font: inherit; cursor: pointer; transition: transform 0.1s ease, filter 0.15s ease; }
+.run:disabled { opacity: 0.6; cursor: progress; }
+.run:active:not(:disabled) { transform: translateY(1px); }
+.run.worker { background: linear-gradient(135deg, var(--ai), var(--ai-2)); color: #fff; box-shadow: 0 16px 30px -18px rgba(109, 40, 217, 0.9); }
+.run.worker:hover:not(:disabled) { filter: brightness(1.07); }
+.run.main { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+.run-icon { width: 44px; height: 44px; flex: none; border-radius: 13px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.2); }
+.run-icon.warn { background: var(--bad-soft); color: var(--bad); }
+.run .tag { padding: 4px 10px; border-radius: 8px; background: var(--peach); color: var(--peach-ink); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.progress-card { display: grid; gap: 8px; padding: 14px; border-radius: 14px; background: var(--surface-2); }
+.bar.thick { height: 10px; }
+
+.mode { font-weight: 700; color: var(--bad); }
+.mode.worker { color: var(--ai); }
+.freeze { font-weight: 700; color: var(--good); }
+.freeze.bad { color: var(--bad); }
+
+.cohort { display: grid; gap: 4px; padding: 14px 16px; border-radius: 14px; }
+.cohort.p1 { background: var(--warn-soft); }
+.cohort.p5 { background: var(--info-soft); }
+.cohort.p10 { background: var(--ai-soft); }
+.match { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
+.ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.score { padding: 3px 10px; border-radius: 8px; font-weight: 800; font-size: 13px; }
+.score.high { background: var(--good-soft); color: var(--good); }
+.score.medium { background: var(--warn-soft); color: var(--warn); }
+.score.low { background: var(--bad-soft); color: var(--bad); }
+
+@media (max-width: 640px) {
+  .run .tag { display: none; }
+  .run { padding: 14px; }
+  .presets { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+}

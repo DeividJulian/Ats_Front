@@ -1,0 +1,88 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Gestión de vacantes</h1>
+      <p class="subtle">Publica, optimiza con IA y atrae al mejor talento.</p>
+    </div>
+    <a class="btn primary" routerLink="/app/vacantes/nueva"><app-icon [icon]="i.CirclePlus" [size]="18" /> Nueva vacante</a>
+  </div>
+
+  <div class="grid summary">
+    <div class="card tint mini">
+      <span class="icon-tile plain"><app-icon [icon]="i.BriefcaseBusiness" [size]="22" /></span>
+      <div><strong>{{ openCount() }} activas</strong><span class="small subtle">De {{ jobs().length }} en total</span></div>
+    </div>
+    <div class="card tint mini">
+      <span class="icon-tile ai"><app-icon [icon]="i.Sparkles" [size]="22" /></span>
+      <div><strong class="purple">{{ averageFit() }}% ajuste</strong><span class="small subtle">Promedio de las postulaciones</span></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <h2>Listado de vacantes</h2>
+    <span class="spacer"></span>
+    <div class="seg">
+      @for (f of filters; track f.value) {
+        <button type="button" [class.active]="filter() === f.value" (click)="filter.set(f.value)">{{ f.label }} ({{ count(f.value) }})</button>
+      }
+    </div>
+  </div>
+  <div class="search-box">
+    <app-icon [icon]="i.Search" />
+    <input type="search" placeholder="Buscar por cargo o habilidad…" aria-label="Buscar vacante" (input)="search.set($any($event.target).value)" />
+  </div>
+
+  @if (loading()) {
+    <div class="card stack"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+  } @else if (error()) {
+    <div class="empty"><strong>{{ error() }}</strong><button type="button" class="btn small" (click)="load()">Reintentar</button></div>
+  } @else if (visible().length === 0) {
+    <div class="empty">
+      <span class="icon-tile"><app-icon [icon]="i.BriefcaseBusiness" [size]="24" /></span>
+      <strong>{{ jobs().length ? 'Ninguna vacante coincide' : 'Todavía no tienes vacantes' }}</strong>
+      @if (!jobs().length) { <a class="btn primary small" routerLink="/app/vacantes/nueva">Crear la primera</a> }
+    </div>
+  } @else {
+    <div class="list">
+      @for (job of visible(); track job.id) {
+        <article class="card job" [class.closed]="job.status === 'closed'">
+          <div class="body">
+            <div class="row meta">
+              <span class="chip">{{ areaOf(job.required_skills) | label: 'area' }}</span>
+              <span class="small subtle when"><app-icon [icon]="i.Calendar" [size]="14" /> {{ timeAgo(job.created_at) }}</span>
+              <span class="spacer"></span>
+              <span class="badge dot" [class]="job.status === 'open' ? 'new' : 'closed'">{{ job.status | label: 'jobStatus' }}</span>
+            </div>
+            <a class="title" [routerLink]="['/app/vacantes', job.id]">{{ job.title }}</a>
+            <span class="small subtle place"><app-icon [icon]="i.GraduationCap" [size]="15" /> {{ job.min_education_level | label: 'education' }} · {{ job.min_experience_years ? job.min_experience_years + ' años de experiencia' : 'Sin experiencia mínima' }}</span>
+            <div class="chips">
+              @for (skill of job.required_skills.slice(0, 6); track skill) { <span class="chip outline">{{ skill }}</span> }
+              @if (job.required_skills.length > 6) { <span class="chip outline">+{{ job.required_skills.length - 6 }}</span> }
+              <span class="chip ai"><app-icon [icon]="i.Zap" [size]="13" /> {{ applicationsById().get(job.id)?.applications ?? 0 }} candidatos</span>
+            </div>
+          </div>
+          <div class="actions">
+            <a class="btn small peach" [routerLink]="['/app/vacantes', job.id]"><app-icon [icon]="i.Trophy" [size]="16" /> Ranking</a>
+            <a class="btn small soft" [routerLink]="['/app/vacantes', job.id, 'editar']"><app-icon [icon]="i.Pencil" [size]="15" /> Editar</a>
+            <span class="spacer"></span>
+            <button type="button" class="btn small soft icon-only" [title]="job.status === 'open' ? 'Cerrar vacante' : 'Reabrir vacante'" [attr.aria-label]="job.status === 'open' ? 'Cerrar vacante' : 'Reabrir vacante'" (click)="toggle(job)">
+              <app-icon [icon]="job.status === 'open' ? i.Lock : i.RotateCcw" [size]="16" />
+            </button>
+            <button type="button" class="btn small danger-soft icon-only" title="Eliminar" aria-label="Eliminar vacante" (click)="remove(job)">
+              <app-icon [icon]="i.Trash2" [size]="16" />
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+  }
+
+  <div class="card tint worker-cta">
+    <span class="icon-tile ai"><app-icon [icon]="i.Bot" [size]="22" /></span>
+    <div class="stack" style="gap: 2px; flex: 1; min-width: 0">
+      <strong>¿Procesar hojas de vida en lote?</strong>
+      <span class="small subtle">El Web Worker califica miles de candidatos sin congelar la pantalla.</span>
+    </div>
+    <a class="btn ai small" routerLink="/app/analisis">Ir al Worker</a>
+  </div>
+</div>

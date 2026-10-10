@@ -1,0 +1,189 @@
+<div class="board">
+  <div class="grid tiles">
+    <div class="card tint mini">
+      <span class="icon-tile plain"><app-icon [icon]="i.Users" [size]="20" /></span>
+      <div><strong>{{ ranking().length }}</strong><span class="small subtle">Postulados en total</span></div>
+    </div>
+    <div class="card tint mini ai-tile">
+      <span class="icon-tile ai"><app-icon [icon]="i.Sparkles" [size]="20" /></span>
+      <div><strong>{{ suggestions().length }}</strong><span class="small">Recomendados por IA</span></div>
+    </div>
+  </div>
+  <div class="row board-head">
+    <div class="stack" style="gap: 2px">
+      <h2>Ranking de compatibilidad</h2>
+      <span class="small subtle">Ordenado por ajuste al cargo, del mejor al peor.</span>
+    </div>
+    <span class="spacer"></span>
+    <button type="button" class="btn small" [class.ai]="blind()" [class.outline]="!blind()" (click)="toggleBlind()" title="Oculta nombres y correos para evaluar solo por ajuste">
+      <app-icon [icon]="blind() ? i.EyeOff : i.Eye" [size]="16" /> {{ blind() ? 'Evaluación anónima' : 'Modo anónimo' }}
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="card stack"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+  } @else if (ranking().length === 0) {
+    <div class="empty">
+      <span class="icon-tile"><app-icon [icon]="i.Users" [size]="24" /></span>
+      <strong>Aún no hay postulaciones</strong>
+      <span>Vincula candidatos de tu base o invita a los sugeridos que aparecen abajo.</span>
+    </div>
+  } @else {
+    @for (item of ranking(); track item.application_id) {
+      <article class="card candidate" [class.first]="item.position === 1">
+        <div class="person">
+          <div class="avatar-wrap">
+            <span class="avatar large" [class]="'c' + (((item.position - 1) % 4) + 1)">{{ blind() ? '#' + item.position : initials(item.name) }}</span>
+            <span class="place" [class.gold]="item.position === 1">
+              @if (item.position === 1) { <app-icon [icon]="i.Trophy" [size]="11" /> }
+              #{{ item.position }}
+            </span>
+          </div>
+          <div class="who">
+            @if (blind()) {
+              <strong class="name">{{ item.name }}</strong>
+              <span class="small subtle"><app-icon [icon]="i.ShieldCheck" [size]="13" /> Datos personales ocultos</span>
+            } @else {
+              <a class="name" [routerLink]="['/app/candidatos', item.candidate_id]">{{ item.name }}</a>
+              <span class="small subtle"><app-icon [icon]="i.Mail" [size]="13" /> {{ item.email }}</span>
+            }
+          </div>
+          <span class="score-pill" [class]="item.classification">
+            <app-icon [icon]="i.CircleCheck" [size]="15" /> {{ item.score }} {{ item.classification | label: 'classification' }}
+          </span>
+        </div>
+
+        <div class="fit">
+          <div class="row small"><span class="subtle">Ajuste al cargo</span><span class="spacer"></span><strong>{{ item.score }} / 100 pts</strong></div>
+          <div class="bar thick"><span [class]="item.classification" [style.width.%]="item.score"></span></div>
+        </div>
+
+        @if (item.matching_skills.length) {
+          <div class="stack skills">
+            <span class="small label good"><app-icon [icon]="i.CircleCheck" [size]="14" /> Habilidades coincidentes ({{ item.matching_skills.length }})</span>
+            <div class="chips">@for (s of item.matching_skills; track s) { <span class="chip good">✓ {{ s }}</span> }</div>
+          </div>
+        }
+        @if (item.missing_skills.length) {
+          <div class="stack skills">
+            <span class="small label bad"><app-icon [icon]="i.CircleX" [size]="14" /> Brechas detectadas ({{ item.missing_skills.length }})</span>
+            <div class="chips">@for (s of item.missing_skills; track s) { <span class="chip bad">✗ Falta {{ s }}</span> }</div>
+          </div>
+        }
+
+        <div class="status-box">
+          <div class="row"><span class="small subtle">Estado actual</span><span class="spacer"></span><span class="badge" [class]="item.status">{{ item.status | label: 'status' }}</span></div>
+          @if (nextStatuses(item.status).length && isOpen()) {
+            <span class="small subtle">Avanzar al siguiente paso:</span>
+            <div class="chips">
+              @for (s of nextStatuses(item.status); track s) {
+                <button type="button" class="step" [class.reject]="s === 'rejected'" (click)="advance(item, s)">{{ s === 'rejected' ? 'Rechazar' : '→ ' + (s | label: 'status') }}</button>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="row">
+          <button type="button" class="btn ai small" [disabled]="evaluating() === item.application_id || !aiStatus()?.configured" [title]="aiStatus()?.configured ? '' : 'Requiere ANTHROPIC_API_KEY en el servidor'" (click)="evaluate(item)">
+            @if (evaluating() === item.application_id) { <span class="spinner"></span> Analizando… } @else { <app-icon [icon]="i.Sparkles" [size]="15" /> {{ evaluations()[item.application_id] ? 'Ocultar evaluación' : 'Evaluar con IA' }} }
+          </button>
+          <button type="button" class="btn small soft" (click)="reviewing.set(item)"><app-icon [icon]="i.FileText" [size]="15" /> Ver expediente</button>
+          <span class="spacer"></span>
+          <button type="button" class="btn small ghost" (click)="withdraw(item)"><app-icon [icon]="i.UserX" [size]="15" /> Retirar</button>
+        </div>
+
+        @if (evaluations()[item.application_id]; as ev) {
+          <div class="ai-eval">
+            <div class="row">
+              <span class="icon-tile ai"><app-icon [icon]="i.BrainCircuit" [size]="20" /></span>
+              <div class="stack" style="gap: 0; flex: 1">
+                <strong>Evaluación del asistente Claude</strong>
+                <span class="small subtle">El puntaje del sistema ({{ ev.system_score }}) no cambia</span>
+              </div>
+            </div>
+            <div class="ai-block">
+              <span class="small label ai-label"><app-icon [icon]="i.FileText" [size]="14" /> Resumen ejecutivo</span>
+              <p class="small">{{ ev.summary }}</p>
+            </div>
+            <div class="ai-block reco" [class]="ev.recommendation">
+              <span class="small label"><app-icon [icon]="i.ShieldCheck" [size]="14" /> Recomendación</span>
+              <strong>{{ ev.recommendation | label: 'recommendation' }}</strong>
+            </div>
+            <div class="grid cols-2">
+              <div class="ai-block">
+                <span class="small label good"><app-icon [icon]="i.CircleCheck" [size]="14" /> Fortalezas</span>
+                <ul class="small">@for (s of ev.strengths; track $index) { <li>{{ s }}</li> }</ul>
+              </div>
+              <div class="ai-block">
+                <span class="small label warn"><app-icon [icon]="i.TriangleAlert" [size]="14" /> Brechas</span>
+                <ul class="small">@for (s of ev.gaps; track $index) { <li>{{ s }}</li> }</ul>
+              </div>
+            </div>
+            <div class="ai-block">
+              <span class="small label ai-label"><app-icon [icon]="i.MessageSquareText" [size]="14" /> Preguntas sugeridas para la entrevista</span>
+              <ol class="small">@for (q of ev.interview_questions; track $index) { <li>{{ q }}</li> }</ol>
+            </div>
+          </div>
+        }
+      </article>
+    }
+  }
+
+  @if (isOpen()) {
+    <div class="card stack">
+      <div class="row">
+        <span class="icon-tile"><app-icon [icon]="i.UserPlus" [size]="20" /></span>
+        <div class="stack" style="gap: 0"><h3>Postular un candidato existente</h3><span class="small subtle">Vincula perfiles ya registrados en tu base de talento.</span></div>
+      </div>
+      <label>
+        Candidato
+        <input type="search" placeholder="Busca por nombre o correo…" [value]="linkTerm()" (input)="linkTerm.set($any($event.target).value); linkChoice.set(null)" />
+      </label>
+      @if (linkTerm() && !linkChoice()) {
+        <div class="options">
+          @for (c of linkOptions(); track c.id) {
+            <button type="button" (click)="choose(c)"><span class="avatar small c2">{{ initials(c.name) }}</span> <span>{{ c.name }} <span class="subtle small">· {{ c.email }}</span></span></button>
+          } @empty {
+            <span class="small subtle">Nadie más coincide (o ya están postulados).</span>
+          }
+        </div>
+      }
+      <button type="button" class="btn primary" [disabled]="!linkChoice()" (click)="link()"><app-icon [icon]="i.Link" [size]="16" /> Vincular a la vacante</button>
+    </div>
+
+    <div class="card stack">
+      <div class="row">
+        <span class="icon-tile ai"><app-icon [icon]="i.Sparkles" [size]="20" /></span>
+        <div class="stack" style="gap: 0; flex: 1"><h3>Candidatos sugeridos automáticamente</h3><span class="small subtle">De tu base, aún sin postularse, ordenados por afinidad.</span></div>
+        <span class="badge ai">{{ suggestions().length }} sugeridos</span>
+      </div>
+      @for (s of suggestions(); track s.candidate_id) {
+        <div class="suggestion">
+          <div class="row">
+            <span class="avatar c1">{{ initials(s.name) }}</span>
+            <div class="stack" style="gap: 0; flex: 1; min-width: 0">
+              <a class="strong" [routerLink]="['/app/candidatos', s.candidate_id]">{{ s.name }}</a>
+              <span class="small subtle">{{ s.email }}</span>
+            </div>
+            <span class="badge" [class]="s.classification">{{ s.score }} afinidad</span>
+          </div>
+          <div class="chips">
+            @for (k of s.matching_skills; track k) { <span class="chip outline">{{ k }}</span> }
+            @for (k of s.missing_skills.slice(0, 3); track k) { <span class="chip bad">Sin {{ k }}</span> }
+          </div>
+          <div class="row"><span class="spacer"></span><button type="button" class="btn ai small" (click)="apply(s.candidate_id, s.name)"><app-icon [icon]="i.UserPlus" [size]="15" /> Invitar a la vacante</button></div>
+        </div>
+      } @empty {
+        <span class="small subtle">No hay más candidatos para sugerir. Agrega más perfiles a tu base.</span>
+      }
+    </div>
+  } @else {
+    <div class="notice">La vacante está cerrada: no recibe nuevas postulaciones ni cambios de estado.</div>
+  }
+
+  @if (reviewing(); as item) {
+    <app-modal [title]="(blind() ? 'Candidato ' + item.position : item.name) + ' · ' + job().title" (closed)="reviewing.set(null)">
+      <app-application-review [applicationId]="item.application_id" />
+    </app-modal>
+  }
+</div>

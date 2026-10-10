@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import { API_URL } from '../config/api.config';
 import {
   AiEvaluation,
+  AiResumeProfile,
   AiStatus,
   Application,
   ApplicationStatus,
@@ -132,6 +133,11 @@ export class CandidateService {
     return this.http.post<Candidate>(`${this.url}/${id}/resume`, pdfForm(file));
   }
 
+  /** Contact data and profile detected in pasted resume text, without saving anything. */
+  analyzeText(text: string): Observable<ResumeAnalysis> {
+    return this.http.post<ResumeAnalysis>(`${API_URL}/nlp/analyze-text`, { text });
+  }
+
   analyzeResume(file: File): Observable<ResumeAnalysis> {
     return this.http.post<ResumeAnalysis>(`${API_URL}/nlp/analyze-resume`, pdfForm(file));
   }
@@ -209,6 +215,10 @@ export class AiService {
 
   evaluate(applicationId: number): Observable<AiEvaluation> {
     return this.http.post<AiEvaluation>(`${this.url}/evaluate/${applicationId}`, {});
+  }
+
+  extractResume(text: string): Observable<AiResumeProfile> {
+    return this.http.post<AiResumeProfile>(`${this.url}/extract-resume`, { text });
   }
 
   draftJob(title: string, notes: string): Observable<JobDraft> {

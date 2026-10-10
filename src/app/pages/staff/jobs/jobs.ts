@@ -1,95 +1,53 @@
-import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import {
+  Bot,
+  BriefcaseBusiness,
+  Calendar,
+  CirclePlus,
+  GraduationCap,
+  Lock,
+  LockOpen,
+  Pencil,
+  RotateCcw,
+  Search,
+  Sparkles,
+  Trash2,
+  Trophy,
+  Zap,
+} from 'lucide-angular';
+import { forkJoin } from 'rxjs';
 
-import { Job, JobStatus } from '../../../core/models';
-import { JobService } from '../../../core/services/api.services';
+import { Job, JobStatus, Stats } from '../../../core/models';
+import { JobService, StatsService } from '../../../core/services/api.services';
 import { ToastService } from '../../../core/services/toast.service';
+import { areaOf, timeAgo } from '../../../core/utils/areas';
 import { errorMessage } from '../../../core/utils/http-error';
 import { normalize } from '../../../core/workers/cv-analysis.logic';
 import { reloadOnRemoteChanges } from '../../../core/workers/tab-sync.service';
+import { Icon } from '../../../shared/icon';
 import { LabelPipe } from '../../../shared/label.pipe';
 
 type Filter = 'all' | JobStatus;
 
 @Component({
   selector: 'app-jobs',
-  imports: [RouterLink, DatePipe, LabelPipe],
-  template: `
-    <div class="page">
-      <div class="page-head">
-        <div>
-          <div class="eyebrow">Vacantes</div>
-          <h1>Tus vacantes</h1>
-          <p class="subtle">Abre una vacante para ver el ranking de candidatos.</p>
-        </div>
-        <a class="btn primary" routerLink="/app/vacantes/nueva">+ Nueva vacante</a>
-      </div>
-
-      <div class="row">
-        <div class="tabs">
-          @for (f of filters; track f.value) {
-            <button type="button" [class.active]="filter() === f.value" (click)="filter.set(f.value)">
-              {{ f.label }} <span class="subtle">({{ count(f.value) }})</span>
-            </button>
-          }
-        </div>
-        <span class="spacer"></span>
-        <input type="search" class="search" placeholder="Buscar vacante…" aria-label="Buscar vacante" (input)="search.set($any($event.target).value)" />
-      </div>
-
-      @if (loading()) {
-        <div class="card stack"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
-      } @else if (error()) {
-        <div class="empty"><strong>{{ error() }}</strong><button type="button" class="btn small" (click)="load()">Reintentar</button></div>
-      } @else if (visible().length === 0) {
-        <div class="empty">
-          <span class="big">💼</span>
-          <strong>{{ jobs().length ? 'Ninguna vacante coincide' : 'Todavía no tienes vacantes' }}</strong>
-          @if (!jobs().length) { <a class="btn primary small" routerLink="/app/vacantes/nueva">Crear la primera</a> }
-        </div>
-      } @else {
-        <div class="list">
-          @for (job of visible(); track job.id) {
-            <div class="card job">
-              <div class="main">
-                <div class="row">
-                  <a class="title" [routerLink]="['/app/vacantes', job.id]">{{ job.title }}</a>
-                  <span class="badge" [class]="job.status">{{ job.status | label: 'jobStatus' }}</span>
-                </div>
-                <div class="chips">
-                  @for (skill of job.required_skills; track skill) { <span class="chip">{{ skill }}</span> }
-                </div>
-                <span class="subtle small">
-                  {{ job.min_experience_years }} años de experiencia · {{ job.min_education_level | label: 'education' }} · creada el {{ job.created_at | date: 'd MMM y' }}
-                </span>
-              </div>
-              <div class="actions">
-                <a class="btn small primary" [routerLink]="['/app/vacantes', job.id]">Ver ranking</a>
-                <a class="btn small" [routerLink]="['/app/vacantes', job.id, 'editar']">Editar</a>
-                <button type="button" class="btn small" (click)="toggle(job)">{{ job.status === 'open' ? 'Cerrar' : 'Reabrir' }}</button>
-                <button type="button" class="btn small danger" (click)="remove(job)">Eliminar</button>
-              </div>
-            </div>
-          }
-        </div>
-      }
-    </div>
-  `,
-  styles: `
-    .search { max-width: 280px; }
-    .list { display: grid; gap: 12px; }
-    .job { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
-    .main { flex: 1; min-width: 260px; display: grid; gap: 10px; }
-    .title { font-size: 17px; font-weight: 700; color: var(--text); }
-    .actions { display: flex; flex-wrap: wrap; gap: 8px; }
-  `,
+  imports: [RouterLink, LabelPipe, Icon],
+  templateUrl: './jobs.html',
+  styleUrl: './jobs.css',
 })
 export class Jobs {
   private readonly api = inject(JobService);
+  private readonly statsApi = inject(StatsService);
   private readonly toasts = inject(ToastService);
 
+  protected readonly i = {
+    Bot, BriefcaseBusiness, Calendar, CirclePlus, GraduationCap, Lock, LockOpen, Pencil, RotateCcw, Search, Sparkles,
+    Trash2, Trophy, Zap,
+  };
+
   protected readonly jobs = signal<Job[]>([]);
+  protected readonly stats = signal<Stats | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly filter = signal<Filter>('all');
@@ -99,6 +57,19 @@ export class Jobs {
     { value: 'open', label: 'Abiertas' },
     { value: 'closed', label: 'Cerradas' },
   ];
+  protected readonly timeAgo = timeAgo;
+  protected readonly areaOf = areaOf;
+
+  protected readonly openCount = computed(() => this.jobs().filter((j) => j.status === 'open').length);
+  protected readonly applicationsById = computed(
+    () => new Map((this.stats()?.per_job ?? []).map((p) => [p.job_id, p] as const)),
+  );
+  /** Average fit of every application, weighted by how many each job has. */
+  protected readonly averageFit = computed(() => {
+    const perJob = this.stats()?.per_job ?? [];
+    const total = perJob.reduce((s, p) => s + p.applications, 0);
+    return total ? Math.round(perJob.reduce((s, p) => s + p.average_score * p.applications, 0) / total) : 0;
+  });
 
   protected readonly visible = computed(() => {
     const term = normalize(this.search().trim());
@@ -118,9 +89,10 @@ export class Jobs {
   }
 
   protected load(): void {
-    this.api.list().subscribe({
-      next: (jobs) => {
+    forkJoin({ jobs: this.api.list(), stats: this.statsApi.get() }).subscribe({
+      next: ({ jobs, stats }) => {
         this.jobs.set(jobs);
+        this.stats.set(stats);
         this.loading.set(false);
       },
       error: (e) => {

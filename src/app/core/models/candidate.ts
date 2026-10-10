@@ -32,6 +32,7 @@ export interface ProfileInput {
   education_level: EducationLevel | null;
 }
 
+/** What the system detects in a resume (PDF or pasted text). */
 export interface ResumeAnalysis {
   name: string | null;
   email: string | null;

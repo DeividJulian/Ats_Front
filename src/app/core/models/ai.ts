@@ -17,6 +17,13 @@ export interface AiEvaluation {
   interview_questions: string[];
 }
 
+export interface AiResumeProfile {
+  skills: string[];
+  experience_years: number;
+  education_level: EducationLevel | null;
+  summary: string;
+}
+
 export interface JobDraft {
   description: string;
   requirements: string;
