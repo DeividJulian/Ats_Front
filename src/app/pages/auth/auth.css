@@ -1,0 +1,32 @@
+.auth { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+.form-side { display: grid; align-content: center; justify-items: center; padding: 40px 22px; }
+.form-box { width: min(420px, 100%); display: grid; gap: 22px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; color: var(--text); }
+.brand:hover { text-decoration: none; }
+.logo { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), #ff7a45); color: var(--accent-ink); font-weight: 800; }
+.dot { color: var(--accent); }
+.form-box h1 { font-size: 30px; font-weight: 800; }
+.password { position: relative; }
+.password input { padding-right: 76px; }
+.password button { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.switch { text-align: center; color: var(--muted); font-size: 14px; }
+
+.divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.demo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.demo button { display: grid; gap: 2px; text-align: left; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; transition: border-color 0.15s ease; }
+.demo button:hover:not(:disabled) { border-color: var(--accent); }
+.demo small { color: var(--muted); font-size: 12px; }
+
+.art-side { position: relative; overflow: hidden; display: grid; align-content: center; padding: 48px; background: radial-gradient(circle at 20% 20%, rgba(124, 92, 255, 0.35), transparent 55%), radial-gradient(circle at 80% 80%, rgba(245, 165, 36, 0.28), transparent 55%), var(--bg-soft); border-left: 1px solid var(--border); }
+.art { max-width: 460px; display: grid; gap: 20px; }
+.art h2 { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; }
+.art p { color: var(--muted); }
+.benefits { list-style: none; padding: 0; display: grid; gap: 12px; }
+.benefits li { display: flex; gap: 12px; align-items: flex-start; }
+.benefits li span:first-child { width: 30px; height: 30px; flex: none; border-radius: 9px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.06); }
+
+@media (max-width: 900px) {
+  .auth { grid-template-columns: 1fr; }
+  .art-side { display: none; }
+}

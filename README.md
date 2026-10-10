@@ -1,0 +1,86 @@
+# Talento · Portal ATS para pymes — Frontend
+
+Interfaz web del sistema de selección de personal: una página de inicio con la bolsa de empleo, login con roles, el panel del equipo de selección y el portal del candidato. Se comunica con el [backend en FastAPI](https://github.com/DeividJulian/Ats_Backend).
+
+Proyecto final de Programación Orientada a la Web — Universidad Cooperativa de Colombia.
+
+## Tecnologías
+
+- Angular 21 (componentes standalone, signals, rutas con carga diferida)
+- Formularios reactivos con validación
+- Vitest para pruebas
+- Web Worker, Shared Worker y Service Worker
+- Despliegue en Vercel
+
+El código está en inglés; todo lo que ve el usuario está en español.
+
+## Roles
+
+| Rol | Qué ve |
+|---|---|
+| Visitante | Página de inicio, vacantes abiertas, detalle de cada vacante, registro y login |
+| Candidato | Su inicio (perfil, recomendaciones), vacantes con su nivel de ajuste, sus postulaciones con línea de tiempo y su perfil (con carga de hoja de vida en PDF) |
+| Reclutador | Panel con estadísticas, vacantes (con redacción por IA), ranking de candidatos (con evaluación anónima), candidatos (alta manual o desde PDF), guía de entrevista, evaluación con IA y análisis masivo |
+| Administrador | Todo lo del reclutador, más usuarios y roles, y carga de datos de demostración |
+
+El login tiene botones de **cuentas de demostración** (`reclutador@demo.com` y `camila.ortega@example.com`, clave `Demo1234`), que existen cuando un administrador carga los datos de demostración en el backend.
+
+## Los tres workers
+
+| Worker | Archivo | Para qué |
+|---|---|---|
+| **Web Worker** | `src/app/core/workers/cv-analysis.worker.ts` | El análisis masivo de hojas de vida (miles de documentos con NLP, TF-IDF y puntaje) corre en un hilo aparte. La página *Análisis masivo* muestra una animación que se congela si el cálculo corre en el hilo principal y sigue fluida con el worker. |
+| **Shared Worker** | `public/shared-worker.js` | Une todas las pestañas abiertas: cuando una cambia datos, las demás se actualizan solas y aparece un contador de pestañas sincronizadas. |
+| **Service Worker** | `public/sw.js` | La app abre sin conexión y muestra los últimos datos guardados. Al cerrar sesión se borran, para que nadie más los vea en ese navegador. Solo se activa en la versión compilada (no con `ng serve`). |
+
+## Estructura
+
+```
+src/app/
+├── core/
+│   ├── auth/          # Sesión (JWT), interceptor y guardas por rol
+│   ├── config/        # URL del backend
+│   ├── models/        # Tipos de las respuestas de la API
+│   ├── services/      # Un servicio por recurso de la API
+│   ├── utils/         # Errores y etiquetas en español
+│   └── workers/       # Web Worker, Shared Worker, Service Worker y lógica del análisis
+├── layout/            # Cabecera pública y marco del área privada (menú por rol)
+├── pages/
+│   ├── landing/       # Página de inicio
+│   ├── public-job/    # Detalle público de una vacante
+│   ├── auth/          # Login y registro
+│   ├── staff/         # Panel, vacantes, ranking, candidatos, análisis masivo, usuarios
+│   └── portal/        # Inicio, vacantes, postulaciones y perfil del candidato
+└── shared/            # Componentes reutilizables (modal, barra de puntaje, carga de PDF…)
+```
+
+## Ejecutar en local
+
+Necesitas Node 20.19 o superior y el backend corriendo en el puerto 8001:
+
+```
+# En la carpeta del backend
+uvicorn main:app --reload --port 8001
+
+# En esta carpeta
+npm install
+npm start
+```
+
+Abre http://localhost:4200. En local el front usa `http://127.0.0.1:8001`; publicado usa la URL de Render configurada en `src/app/core/config/api.config.ts`.
+
+## Pruebas
+
+```
+npm test -- --watch=false
+```
+
+58 pruebas: sesión, interceptor y guardas de rutas, servicios de la API, lógica del análisis (con los mismos casos que el backend), workers, página de inicio, login y utilidades.
+
+## Desplegar en Vercel
+
+1. En `src/app/core/config/api.config.ts` pon la URL de tu backend en Render en `PRODUCTION_API`.
+2. Entra a [vercel.com](https://vercel.com) con GitHub, **Add New → Project** y elige este repositorio. Vercel detecta Angular solo.
+3. Al terminar, copia la URL del front y ponla en el backend (Render → Environment → `ALLOWED_ORIGINS`).
+
+`vercel.json` hace que las rutas internas (por ejemplo `/app/vacantes`) funcionen al recargar la página.

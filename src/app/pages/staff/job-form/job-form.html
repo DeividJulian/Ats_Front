@@ -1,0 +1,85 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <a routerLink="/app/vacantes" class="small">← Vacantes</a>
+      <h1>{{ isEdit() ? 'Editar vacante' : 'Nueva vacante' }}</h1>
+      <p class="subtle">Describe el cargo con detalle: el sistema usará este texto para comparar a los candidatos.</p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="card stack"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+  } @else {
+    <div class="layout">
+      <form class="card form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+        <label>
+          Cargo
+          <input formControlName="title" placeholder="Ej.: Auxiliar contable" [class.invalid]="invalid('title')" />
+          @if (invalid('title')) { <span class="error-text">Escribe el nombre del cargo (mínimo 3 caracteres)</span> }
+        </label>
+        <label>
+          Descripción
+          <textarea formControlName="description" rows="5" placeholder="¿Qué hará la persona en el día a día?" [class.invalid]="invalid('description')"></textarea>
+          @if (invalid('description')) { <span class="error-text">La descripción debe tener al menos 10 caracteres</span> }
+        </label>
+        <label>
+          Requisitos
+          <textarea formControlName="requirements" rows="4" placeholder="Ej.: Contabilidad, Excel avanzado, Siigo. 2 años de experiencia."></textarea>
+        </label>
+        <div class="two">
+          <label>
+            Años de experiencia mínima
+            <input type="number" min="0" max="40" formControlName="min_experience_years" [class.invalid]="invalid('min_experience_years')" />
+            @if (invalid('min_experience_years')) { <span class="error-text">Entre 0 y 40 años</span> }
+          </label>
+          <label>
+            Nivel educativo mínimo
+            <select formControlName="min_education_level">
+              <option value="">Sin requisito</option>
+              @for (level of levels; track level.value) { <option [value]="level.value">{{ level.label }}</option> }
+            </select>
+          </label>
+        </div>
+        <label>
+          Habilidades requeridas <span class="hint">(separadas por comas; si lo dejas vacío se usan las detectadas)</span>
+          <input formControlName="skills" placeholder="Ej.: contabilidad, excel, siigo" />
+        </label>
+        <div class="row">
+          <button type="submit" class="btn primary" [disabled]="saving()">{{ saving() ? 'Guardando…' : isEdit() ? 'Guardar cambios' : 'Publicar vacante' }}</button>
+          <a class="btn ghost" routerLink="/app/vacantes">Cancelar</a>
+        </div>
+      </form>
+
+      <div class="side">
+        <div class="card stack">
+          <h3>🔎 Habilidades que usará el ranking</h3>
+          @if (handSkills().length) {
+            <p class="subtle small">Las escribiste a mano:</p>
+            <div class="chips">@for (s of handSkills(); track s) { <span class="chip good">{{ s }}</span> }</div>
+          } @else if (detectedSkills().length) {
+            <p class="subtle small">Detectadas automáticamente en el texto mientras escribes:</p>
+            <div class="chips">@for (s of detectedSkills(); track s) { <span class="chip good">{{ s }}</span> }</div>
+          } @else {
+            <p class="subtle small">Todavía no se detecta ninguna. Menciona herramientas o competencias (Excel, Python, ventas, liderazgo…).</p>
+          }
+          @if (handSkills().length && detectedSkills().length) {
+            <button type="button" class="btn small" (click)="useDetected()">Usar las detectadas ({{ detectedSkills().length }})</button>
+          }
+        </div>
+
+        <div class="card stack notice ai">
+          <h3>🧠 Redactar con IA</h3>
+          @if (aiConfigured()) {
+            <p class="small subtle">Escribe el cargo y unas notas; Claude propone la descripción, los requisitos y las habilidades.</p>
+            <textarea rows="3" placeholder="Notas: pyme comercial, manejo de facturación electrónica, trabajo presencial…" [value]="aiNotes()" (input)="aiNotes.set($any($event.target).value)"></textarea>
+            <button type="button" class="btn ai" [disabled]="drafting()" (click)="draftWithAi()">
+              @if (drafting()) { <span class="spinner"></span> Redactando… } @else { ✨ Generar borrador }
+            </button>
+          } @else {
+            <p class="small subtle">Disponible cuando el servidor tenga configurada la clave de Claude (ANTHROPIC_API_KEY).</p>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

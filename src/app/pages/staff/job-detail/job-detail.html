@@ -1,0 +1,143 @@
+<div class="page">
+  @if (loading()) {
+    <div class="card stack"><div class="skeleton" style="width: 40%"></div><div class="skeleton"></div></div>
+  } @else if (error()) {
+    <div class="empty"><strong>{{ error() }}</strong><a class="btn small" routerLink="/app/vacantes">Volver a vacantes</a></div>
+  } @else if (job(); as job) {
+    <div class="page-head">
+      <div class="stack">
+        <a routerLink="/app/vacantes" class="small">← Vacantes</a>
+        <div class="row">
+          <h1>{{ job.title }}</h1>
+          <span class="badge" [class]="job.status">{{ job.status | label: 'jobStatus' }}</span>
+        </div>
+        <div class="chips">@for (s of job.required_skills; track s) { <span class="chip">{{ s }}</span> }</div>
+      </div>
+      <div class="head-actions">
+        <a class="btn small" [routerLink]="['/app/vacantes', job.id, 'editar']">Editar</a>
+        <button type="button" class="btn small" (click)="toggleStatus(job)">{{ job.status === 'open' ? 'Cerrar vacante' : 'Reabrir' }}</button>
+        @if (job.status === 'open') {
+          <a class="btn small ghost" [routerLink]="['/empleos', job.id]" target="_blank">Ver como candidato ↗</a>
+        }
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button type="button" [class.active]="tab() === 'ranking'" (click)="tab.set('ranking')">Ranking ({{ ranking().length }})</button>
+      <button type="button" [class.active]="tab() === 'suggested'" (click)="tab.set('suggested')">Candidatos sugeridos ({{ suggestions().length }})</button>
+      <button type="button" [class.active]="tab() === 'details'" (click)="tab.set('details')">Detalle de la vacante</button>
+    </div>
+
+    @switch (tab()) {
+      @case ('ranking') {
+        <div class="toolbar">
+          <label class="checkbox" title="Oculta nombres y correos para evaluar solo por ajuste">
+            <input type="checkbox" [checked]="blind()" (change)="toggleBlind()" /> Evaluación anónima
+          </label>
+          <span class="spacer"></span>
+          <button type="button" class="btn small" [disabled]="recalculating()" (click)="recalculate()">{{ recalculating() ? 'Recalculando…' : '↻ Recalcular puntajes' }}</button>
+        </div>
+
+        @if (ranking().length === 0) {
+          <div class="empty">
+            <span class="big">📭</span>
+            <strong>Aún no hay postulaciones</strong>
+            <span>Revisa los candidatos sugeridos: el sistema ya encontró perfiles para esta vacante.</span>
+            <button type="button" class="btn small primary" (click)="tab.set('suggested')">Ver sugeridos</button>
+          </div>
+        } @else {
+          <div class="card table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Candidato</th><th>Ajuste</th><th>Habilidades</th><th>Estado</th><th></th></tr></thead>
+              <tbody>
+                @for (item of ranking(); track item.application_id) {
+                  <tr>
+                    <td><span class="pos" [class.first]="item.position === 1">{{ item.position }}</span></td>
+                    <td>
+                      <div class="who">
+                        @if (blind()) {
+                          <strong>{{ item.name }}</strong>
+                          <span class="subtle small">Datos ocultos</span>
+                        } @else {
+                          <a [routerLink]="['/app/candidatos', item.candidate_id]"><strong>{{ item.name }}</strong></a>
+                          <span class="subtle small">{{ item.email }}</span>
+                        }
+                      </div>
+                    </td>
+                    <td><app-score-bar [score]="item.score" [classification]="item.classification" /></td>
+                    <td>
+                      <div class="chips">
+                        @for (s of item.matching_skills; track s) { <span class="chip good">✓ {{ s }}</span> }
+                        @for (s of item.missing_skills; track s) { <span class="chip bad">✗ {{ s }}</span> }
+                      </div>
+                    </td>
+                    <td>
+                      <div class="stack">
+                        <span class="badge" [class]="item.status">{{ item.status | label: 'status' }}</span>
+                        @if (nextStatuses(item.status).length) {
+                          <select class="status-select" aria-label="Cambiar estado" (change)="changeStatus(item, $event)">
+                            <option value="">Mover a…</option>
+                            @for (s of nextStatuses(item.status); track s) { <option [value]="s">{{ s | label: 'status' }}</option> }
+                          </select>
+                        }
+                      </div>
+                    </td>
+                    <td>
+                      <div class="row">
+                        <button type="button" class="btn small primary" (click)="reviewing.set(item)">Analizar</button>
+                        <button type="button" class="btn small ghost danger" title="Retirar postulación" (click)="withdraw(item)">✕</button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+      @case ('suggested') {
+        <p class="subtle">Candidatos de tu base que aún no se postulan, ordenados por ajuste a esta vacante.</p>
+        @if (suggestions().length === 0) {
+          <div class="empty"><span class="big">🤷</span><strong>No hay más candidatos para sugerir</strong><a class="btn small" routerLink="/app/candidatos">Agregar candidatos</a></div>
+        } @else {
+          <div class="grid cols-2">
+            @for (s of suggestions(); track s.candidate_id) {
+              <div class="card stack">
+                <div class="row">
+                  <a [routerLink]="['/app/candidatos', s.candidate_id]"><strong>{{ s.name }}</strong></a>
+                  <span class="spacer"></span>
+                  @if (job.status === 'open') {
+                    <button type="button" class="btn small primary" (click)="applySuggested(s)">+ Postular</button>
+                  }
+                </div>
+                <app-score-bar [score]="s.score" [classification]="s.classification" />
+                <div class="chips">
+                  @for (k of s.matching_skills; track k) { <span class="chip good">✓ {{ k }}</span> }
+                  @for (k of s.missing_skills; track k) { <span class="chip bad">✗ {{ k }}</span> }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      }
+      @case ('details') {
+        <div class="card stack">
+          <dl class="dl">
+            <dt>Experiencia mínima</dt><dd>{{ job.min_experience_years }} años</dd>
+            <dt>Nivel educativo</dt><dd>{{ job.min_education_level | label: 'education' }}</dd>
+          </dl>
+          <h3>Descripción</h3>
+          <p class="pre">{{ job.description }}</p>
+          <h3>Requisitos</h3>
+          <p class="pre">{{ job.requirements || 'Sin requisitos adicionales' }}</p>
+        </div>
+      }
+    }
+
+    @if (reviewing(); as item) {
+      <app-modal [title]="(blind() ? 'Candidato anónimo' : item.name) + ' · ' + job.title" (closed)="reviewing.set(null)">
+        <app-application-review [applicationId]="item.application_id" />
+      </app-modal>
+    }
+  }
+</div>

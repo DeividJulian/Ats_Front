@@ -1,0 +1,58 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <div class="eyebrow">Mi perfil</div>
+      <h1>Tu perfil profesional</h1>
+      <p class="subtle">Las empresas te evalúan por esto, nunca por tu nombre, edad ni género.</p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="card stack"><div class="skeleton"></div><div class="skeleton"></div></div>
+  } @else {
+    @if (completeness(); as c) {
+      <div class="card stack">
+        <div class="row"><strong>Perfil completo al {{ c.pct }}%</strong><span class="spacer"></span>@if (c.pct === 100) { <span class="badge high">¡Excelente!</span> }</div>
+        <div class="meter"><span [style.width.%]="c.pct"></span></div>
+        @if (c.missing.length) { <span class="small subtle">Te falta: {{ c.missing.join(' · ') }}</span> }
+      </div>
+    }
+
+    <div class="layout">
+      <div class="col">
+        <div class="card stack">
+          <h2>📄 Tu hoja de vida</h2>
+          <p class="subtle small">Súbela en PDF y llenamos tu perfil automáticamente: habilidades, experiencia y educación.</p>
+          <app-pdf-drop [busy]="uploading()" (fileSelected)="upload($event)" />
+        </div>
+
+        <form class="card form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+          <h2>Tus datos</h2>
+          <div class="two">
+            <label>Nombre<input formControlName="name" autocomplete="name" />
+              @if (form.controls.name.touched && form.controls.name.invalid) { <span class="error-text">Mínimo 2 caracteres</span> }
+            </label>
+            <label>Correo<input [value]="profile()?.email" disabled title="Es tu usuario: no se puede cambiar" /></label>
+            <label>Teléfono<input type="tel" formControlName="phone" autocomplete="tel" /></label>
+            <label>Años de experiencia <span class="hint">(vacío: se detecta)</span><input type="number" min="0" max="45" formControlName="experience_years" /></label>
+            <label>Nivel educativo
+              <select formControlName="education_level">
+                <option value="">Detectar de la hoja de vida</option>
+                @for (l of levels; track l.value) { <option [value]="l.value">{{ l.label }}</option> }
+              </select>
+            </label>
+            <label>Habilidades <span class="hint">(separadas por comas)</span><input formControlName="skills" placeholder="excel, atención al cliente, python…" /></label>
+          </div>
+          <label>Texto de tu hoja de vida <span class="hint">(si no tienes PDF, pégalo aquí)</span>
+            <textarea formControlName="resume_text" rows="8" placeholder="Cuéntanos tu experiencia, estudios y herramientas que manejas…"></textarea>
+          </label>
+          <div><button type="submit" class="btn primary" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar perfil' }}</button></div>
+        </form>
+      </div>
+
+      <div class="col">
+        <app-insights-card [insights]="insights()" title="Así te ven las empresas" />
+      </div>
+    </div>
+  }
+</div>

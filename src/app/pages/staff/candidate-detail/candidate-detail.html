@@ -1,0 +1,88 @@
+<div class="page">
+  <a routerLink="/app/candidatos" class="small">← Candidatos</a>
+
+  @if (loading()) {
+    <div class="card stack"><div class="skeleton" style="width: 40%"></div><div class="skeleton"></div></div>
+  } @else if (error()) {
+    <div class="empty"><strong>{{ error() }}</strong><a class="btn small" routerLink="/app/candidatos">Volver</a></div>
+  } @else if (candidate(); as c) {
+    <div class="card profile">
+      <span class="avatar">{{ initials() }}</span>
+      <div class="stack" style="flex: 1; gap: 6px">
+        <h1>{{ c.name }}</h1>
+        <div class="row small subtle">
+          <span>✉️ {{ c.email }}</span>
+          @if (c.phone) { <span>📞 {{ c.phone }}</span> }
+          <span>⏱ {{ c.experience_years }} años de experiencia</span>
+          <span>🎓 {{ c.education_level | label: 'education' }}</span>
+        </div>
+      </div>
+      <button type="button" class="btn" (click)="editing.set(true)">Editar</button>
+    </div>
+
+    <div class="layout">
+      <div class="col">
+        <app-insights-card [insights]="insights()" />
+
+        <div class="card stack">
+          <h2>📄 Hoja de vida</h2>
+          <app-pdf-drop text="Subir o actualizar la hoja de vida en PDF" [busy]="uploading()" (fileSelected)="upload($event)" />
+          @if (c.resume_text) {
+            <button type="button" class="btn small ghost" (click)="showResume.set(!showResume())">{{ showResume() ? 'Ocultar texto' : 'Ver texto extraído' }}</button>
+            @if (showResume()) { <p class="pre">{{ c.resume_text }}</p> }
+          } @else {
+            <p class="subtle small">Sin hoja de vida todavía: súbela para mejorar el ajuste.</p>
+          }
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="card stack">
+          <h2>💼 Vacantes recomendadas</h2>
+          @if (recommended().length === 0) {
+            <p class="subtle small">No hay vacantes abiertas a las que no se haya postulado.</p>
+          }
+          @for (job of recommended(); track job.job_id) {
+            <div class="stack rec">
+              <div class="row">
+                <a [routerLink]="['/app/vacantes', job.job_id]"><strong>{{ job.title }}</strong></a>
+                <span class="spacer"></span>
+                <button type="button" class="btn small primary" (click)="apply(job)">+ Postular</button>
+              </div>
+              <app-score-bar [score]="job.score" [classification]="job.classification" />
+            </div>
+          }
+        </div>
+
+        <div class="card stack">
+          <h2>📋 Postulaciones</h2>
+          @if (applications().length === 0) {
+            <p class="subtle small">Aún no se ha postulado a ninguna vacante.</p>
+          } @else {
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Vacante</th><th>Ajuste</th><th>Estado</th><th>Fecha</th></tr></thead>
+                <tbody>
+                  @for (a of applications(); track a.id) {
+                    <tr>
+                      <td><a [routerLink]="['/app/vacantes', a.job_id]">{{ jobTitles().get(a.job_id) ?? 'Vacante ' + a.job_id }}</a></td>
+                      <td><strong>{{ a.score }}</strong></td>
+                      <td><span class="badge" [class]="a.status">{{ a.status | label: 'status' }}</span></td>
+                      <td class="small subtle">{{ a.created_at | date: 'd MMM' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    @if (editing()) {
+      <app-modal title="Editar candidato" (closed)="editing.set(false)">
+        <app-candidate-form [candidate]="c" (saved)="saved($event)" (cancelled)="editing.set(false)" />
+      </app-modal>
+    }
+  }
+</div>

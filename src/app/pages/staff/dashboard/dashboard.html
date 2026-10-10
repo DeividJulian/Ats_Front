@@ -1,0 +1,134 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <div class="eyebrow">Panel</div>
+      <h1>Hola, {{ firstName() }} 👋</h1>
+      <p class="subtle">Así va tu proceso de selección.</p>
+    </div>
+    <div class="row">
+      @if (aiStatus(); as ai) {
+        <span class="badge" [class.high]="ai.configured" [title]="ai.configured ? 'Modelo: ' + ai.model : 'Falta ANTHROPIC_API_KEY en el servidor'">
+          {{ ai.configured ? '🧠 IA con Claude activa' : 'IA con Claude no configurada' }}
+        </span>
+      }
+      <a class="btn primary" routerLink="/app/vacantes/nueva">+ Nueva vacante</a>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="grid cols-4">
+      @for (i of [1, 2, 3, 4]; track i) { <div class="card stack"><div class="skeleton" style="width: 40%"></div><div class="skeleton" style="height: 30px"></div></div> }
+    </div>
+  } @else if (error()) {
+    <div class="empty"><span class="big">⚠️</span><strong>{{ error() }}</strong><button type="button" class="btn small" (click)="load()">Reintentar</button></div>
+  } @else if (stats(); as s) {
+    @if (isEmpty()) {
+      <div class="card welcome">
+        <h2>Empecemos 🚀</h2>
+        <p class="subtle">Aún no hay vacantes ni candidatos. Crea tu primera vacante o carga los datos de demostración para ver el sistema funcionando.</p>
+        <div class="row">
+          <a class="btn primary" routerLink="/app/vacantes/nueva">Crear mi primera vacante</a>
+          @if (auth.isAdmin()) {
+            <button type="button" class="btn" [disabled]="seeding()" (click)="loadDemo()">{{ seeding() ? 'Cargando…' : 'Cargar datos de demostración' }}</button>
+          }
+        </div>
+      </div>
+    }
+
+    <div class="grid cols-4">
+      <a class="card hover stat" routerLink="/app/vacantes">
+        <span class="icon">💼</span>
+        <span class="value">{{ s.totals.open_jobs }}<small class="subtle"> / {{ s.totals.jobs }}</small></span>
+        <span class="label">Vacantes abiertas</span>
+      </a>
+      <a class="card hover stat" routerLink="/app/candidatos">
+        <span class="icon">👥</span>
+        <span class="value">{{ s.totals.candidates }}</span>
+        <span class="label">Candidatos en la base</span>
+      </a>
+      <div class="card stat">
+        <span class="icon">📋</span>
+        <span class="value">{{ s.totals.applications }}</span>
+        <span class="label">Postulaciones</span>
+      </div>
+      <div class="card stat">
+        <span class="icon">🎉</span>
+        <span class="value">{{ s.hire_rate_pct }}%</span>
+        <span class="label">Tasa de contratación</span>
+      </div>
+    </div>
+
+    <div class="grid cols-2">
+      <div class="card">
+        <h2>Embudo de selección</h2>
+        <div class="funnel">
+          @for (step of funnel(); track step.status) {
+            <div class="funnel-row">
+              <span class="badge" [class]="step.status">{{ step.label }}</span>
+              <div class="funnel-bar"><span [class]="step.status" [style.width.%]="step.pct"></span></div>
+              <strong>{{ step.count }}</strong>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Habilidades más pedidas</h2>
+        @if (s.most_demanded_skills.length === 0) {
+          <p class="subtle">Cuando publiques vacantes verás aquí qué habilidades se piden más.</p>
+        } @else {
+          <div class="skills">
+            @for (item of s.most_demanded_skills; track item.skill) {
+              <div class="skill-row">
+                <span class="chip">{{ item.skill }}</span>
+                <span class="subtle small">{{ item.jobs }} {{ item.jobs === 1 ? 'vacante' : 'vacantes' }}</span>
+                <div class="bar" [title]="coverage(item.candidates_with_skill) + '% de los candidatos la tiene'"><span [class.high]="coverage(item.candidates_with_skill) >= 50" [class.low]="coverage(item.candidates_with_skill) < 20" [style.width.%]="coverage(item.candidates_with_skill)"></span></div>
+                <span class="small">{{ item.candidates_with_skill }} cand.</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row card-title">
+        <h2>Vacantes</h2>
+        <span class="spacer"></span>
+        <a routerLink="/app/vacantes" class="small">Ver todas →</a>
+      </div>
+      @if (s.per_job.length === 0) {
+        <p class="subtle">Sin vacantes todavía.</p>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Vacante</th><th>Estado</th><th class="num">Postulaciones</th><th class="num">Puntaje promedio</th><th class="num">Mejor puntaje</th></tr></thead>
+            <tbody>
+              @for (job of s.per_job; track job.job_id) {
+                <tr>
+                  <td><a [routerLink]="['/app/vacantes', job.job_id]">{{ job.title }}</a></td>
+                  <td><span class="badge" [class]="job.status">{{ job.status | label: 'jobStatus' }}</span></td>
+                  <td class="num">{{ job.applications }}</td>
+                  <td class="num">{{ job.average_score }}</td>
+                  <td class="num"><strong>{{ job.max_score }}</strong></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    @if (s.talent_gaps.length) {
+      <div class="card gaps">
+        <h2>⚠️ Brechas de talento</h2>
+        <p class="subtle small">Habilidades que piden tus vacantes pero que casi ningún candidato tiene. Considera ampliar la búsqueda o capacitar.</p>
+        <div class="chips">
+          @for (gap of s.talent_gaps; track gap.skill) {
+            <span class="chip bad">{{ gap.skill }} · {{ gap.candidates_with_skill }} cand.</span>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

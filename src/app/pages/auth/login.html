@@ -1,0 +1,69 @@
+<div class="auth">
+  <section class="form-side">
+    <div class="form-box">
+      <a class="brand" routerLink="/"><span class="logo">T</span><span>Talento<span class="dot">.</span></span></a>
+
+      <div class="stack">
+        <h1>Bienvenido de nuevo</h1>
+        <p class="subtle">Inicia sesión para continuar con tus procesos de selección o tus postulaciones.</p>
+      </div>
+
+      @if (expired()) {
+        <div class="notice warn">Tu sesión expiró. Vuelve a iniciar sesión para continuar.</div>
+      }
+      @if (error()) {
+        <div class="notice error" role="alert">{{ error() }}</div>
+      }
+
+      <form class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <label>
+          Correo electrónico
+          <input type="email" formControlName="email" autocomplete="email" placeholder="tu@correo.com"
+                 [class.invalid]="form.controls.email.touched && form.controls.email.invalid" />
+          @if (form.controls.email.touched && form.controls.email.invalid) {
+            <span class="error-text">Escribe un correo válido</span>
+          }
+        </label>
+        <label>
+          Contraseña
+          <span class="password">
+            <input [type]="showPassword() ? 'text' : 'password'" formControlName="password" autocomplete="current-password" placeholder="••••••••"
+                   [class.invalid]="form.controls.password.touched && form.controls.password.invalid" />
+            <button type="button" (click)="showPassword.set(!showPassword())">{{ showPassword() ? 'Ocultar' : 'Mostrar' }}</button>
+          </span>
+          @if (form.controls.password.touched && form.controls.password.invalid) {
+            <span class="error-text">Escribe tu contraseña</span>
+          }
+        </label>
+        <button type="submit" class="btn primary large block" [disabled]="sending()">
+          @if (sending()) { <span class="spinner"></span> Entrando… } @else { Iniciar sesión }
+        </button>
+      </form>
+
+      <div class="divider">o prueba con una cuenta demo</div>
+      <div class="demo">
+        @for (account of demoAccounts; track account.email) {
+          <button type="button" [disabled]="sending()" (click)="useDemo(account)">
+            <span>{{ account.icon }} <strong>{{ account.label }}</strong></span>
+            <small>{{ account.hint }}</small>
+          </button>
+        }
+      </div>
+
+      <p class="switch">¿Buscas empleo y no tienes cuenta? <a routerLink="/registro" [queryParams]="{ redirect: redirect() }">Crea una gratis</a></p>
+    </div>
+  </section>
+
+  <section class="art-side" aria-hidden="true">
+    <div class="art">
+      <h2>Contrata con datos, no con corazonadas.</h2>
+      <p>Todo el proceso de selección en un solo lugar.</p>
+      <ul class="benefits">
+        <li><span>🎯</span><span>Ranking automático de candidatos con puntaje explicable</span></li>
+        <li><span>📄</span><span>Lectura de hojas de vida en PDF en segundos</span></li>
+        <li><span>⚖️</span><span>Evaluación anónima para decidir solo por mérito</span></li>
+        <li><span>🧠</span><span>Guía de entrevista personalizada para cada candidato</span></li>
+      </ul>
+    </div>
+  </section>
+</div>

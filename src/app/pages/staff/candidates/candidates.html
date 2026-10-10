@@ -1,0 +1,94 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <div class="eyebrow">Candidatos</div>
+      <h1>Base de candidatos</h1>
+      <p class="subtle">Agrégalos a mano o sube su hoja de vida en PDF: el sistema llena el perfil solo.</p>
+    </div>
+    <div class="row">
+      <button type="button" class="btn" (click)="openCreate('manual')">+ Manual</button>
+      <button type="button" class="btn primary" (click)="openCreate('pdf')">📄 Desde PDF</button>
+    </div>
+  </div>
+
+  <input type="search" class="search" placeholder="Buscar por nombre, correo o habilidad…" aria-label="Buscar candidato" (input)="search.set($any($event.target).value)" />
+
+  @if (loading()) {
+    <div class="card stack"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+  } @else if (error()) {
+    <div class="empty"><strong>{{ error() }}</strong><button type="button" class="btn small" (click)="load()">Reintentar</button></div>
+  } @else if (visible().length === 0) {
+    <div class="empty">
+      <span class="big">👥</span>
+      <strong>{{ candidates().length ? 'Ningún candidato coincide' : 'Aún no hay candidatos' }}</strong>
+      @if (!candidates().length) { <button type="button" class="btn small primary" (click)="openCreate('pdf')">Subir la primera hoja de vida</button> }
+    </div>
+  } @else {
+    <div class="card table-wrap">
+      <table>
+        <thead><tr><th>Candidato</th><th>Habilidades</th><th class="num">Experiencia</th><th>Educación</th><th></th></tr></thead>
+        <tbody>
+          @for (c of visible(); track c.id) {
+            <tr>
+              <td>
+                <div class="person">
+                  <span class="avatar">{{ initials(c.name) }}</span>
+                  <div class="stack" style="gap: 0">
+                    <a [routerLink]="['/app/candidatos', c.id]">{{ c.name }}</a>
+                    <span class="subtle small">{{ c.email }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="chips">
+                  @for (s of c.skills.slice(0, 5); track s) { <span class="chip">{{ s }}</span> }
+                  @if (c.skills.length > 5) { <span class="chip">+{{ c.skills.length - 5 }}</span> }
+                </div>
+              </td>
+              <td class="num">{{ c.experience_years }} años</td>
+              <td>{{ c.education_level | label: 'education' }}</td>
+              <td>
+                <div class="row">
+                  <a class="btn small" [routerLink]="['/app/candidatos', c.id]">Ver</a>
+                  <button type="button" class="btn small ghost danger" title="Eliminar" (click)="remove(c)">✕</button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (creating() === 'manual') {
+    <app-modal title="Nuevo candidato" (closed)="creating.set(null)">
+      <app-candidate-form (saved)="created($event)" (cancelled)="creating.set(null)" />
+    </app-modal>
+  }
+
+  @if (creating() === 'pdf') {
+    <app-modal title="Nuevo candidato desde su hoja de vida" (closed)="creating.set(null)">
+      @if (preview(); as p) {
+        <div class="notice good">Esto es lo que encontramos en <strong>{{ p.file.name }}</strong>. Revisa y confirma.</div>
+        <dl class="dl">
+          <dt>Nombre</dt><dd>{{ p.analysis.name ?? 'No detectado' }}</dd>
+          <dt>Correo</dt><dd>{{ p.analysis.email ?? 'No detectado' }}</dd>
+          <dt>Teléfono</dt><dd>{{ p.analysis.phone ?? 'No detectado' }}</dd>
+          <dt>Experiencia</dt><dd>{{ p.analysis.experience_years }} años</dd>
+          <dt>Educación</dt><dd>{{ p.analysis.education_level | label: 'education' }}</dd>
+        </dl>
+        <div class="chips">@for (s of p.analysis.skills; track s) { <span class="chip good">{{ s }}</span> }</div>
+        @if (!p.analysis.email || !p.analysis.name) {
+          <div class="notice warn">No se pudo detectar {{ !p.analysis.email ? 'el correo' : 'el nombre' }}. Crea el candidato a mano y pega el texto de la hoja de vida.</div>
+        }
+        <div class="row">
+          <button type="button" class="btn primary" [disabled]="reading() || !p.analysis.email || !p.analysis.name" (click)="confirmPdf()">{{ reading() ? 'Creando…' : 'Crear candidato' }}</button>
+          <button type="button" class="btn ghost" (click)="preview.set(null)">Elegir otro PDF</button>
+        </div>
+      } @else {
+        <app-pdf-drop [busy]="reading()" (fileSelected)="analyze($event)" />
+        <p class="hint">Se detectan nombre, correo, teléfono, habilidades, años de experiencia y nivel educativo. Los PDF escaneados (imágenes) no se pueden leer.</p>
+      }
+    </app-modal>
+  }
+</div>

@@ -1,0 +1,106 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <div class="eyebrow">Análisis masivo · Web Worker</div>
+      <h1>Analiza miles de hojas de vida en segundos</h1>
+      <p class="subtle">El cálculo corre en un hilo aparte del navegador, así que la pantalla nunca se congela.</p>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="card form">
+      <label>
+        Vacante
+        <select (change)="jobId.set(+$any($event.target).value)">
+          @for (job of jobs(); track job.id) { <option [value]="job.id" [selected]="job.id === jobId()">{{ job.title }} ({{ job.status | label: 'jobStatus' }})</option> }
+        </select>
+      </label>
+      <label class="checkbox"><input type="checkbox" [checked]="includeSystem()" (change)="includeSystem.set($any($event.target).checked)" /> Incluir los {{ candidates().length }} candidatos del sistema</label>
+      <label>
+        Hojas de vida sintéticas (prueba de carga): <strong class="value">{{ syntheticCount() | number }}</strong>
+        <input type="range" min="0" max="30000" step="1000" [value]="syntheticCount()" (input)="syntheticCount.set(+$any($event.target).value)" />
+      </label>
+      <label>
+        Pegar hojas de vida <span class="hint">(separa cada una con una línea que diga ---)</span>
+        <textarea rows="4" placeholder="Ingeniera de sistemas con 3 años de experiencia en Python…&#10;---&#10;Contador público con 5 años…" [value]="pasted()" (input)="pasted.set($any($event.target).value)"></textarea>
+      </label>
+      <div class="notice small">Se analizarán <strong>{{ totalToAnalyze() | number }}</strong> hojas de vida.</div>
+      <div class="row">
+        <button type="button" class="btn primary" [disabled]="analysis.running()" (click)="run('worker')">⚡ Analizar con Web Worker</button>
+        <button type="button" class="btn" [disabled]="analysis.running()" (click)="run('main')" title="Para comparar: bloquea la pantalla mientras calcula">Analizar en el hilo principal</button>
+        @if (analysis.running() && analysis.mode() === 'worker') {
+          <button type="button" class="btn ghost danger" (click)="analysis.cancel()">Cancelar</button>
+        }
+      </div>
+    </div>
+
+    <div class="card stack heart">
+      <h3>¿Se congela la pantalla?</h3>
+      <p class="small subtle">Esta pelota se mueve con JavaScript en el hilo principal. Con el Web Worker sigue fluida; en el hilo principal se detiene hasta que termina el cálculo.</p>
+      <div class="track"><span class="ball" [style.transform]="'translateX(' + ballOffset() + 'px)'"></span></div>
+      <span class="small subtle">Cuadros dibujados: {{ frames() | number }}</span>
+      @if (analysis.running()) {
+        <div class="stack">
+          <span class="small">{{ analysis.mode() === 'worker' ? 'Analizando en el Web Worker…' : 'Analizando en el hilo principal…' }} {{ analysis.progress() * 100 | number: '1.0-0' }}%</span>
+          <div class="bar"><span [style.width.%]="analysis.progress() * 100"></span></div>
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (latest(); as run) {
+    <div class="grid cols-4">
+      <div class="card stat"><span class="value">{{ run.output.total | number }}</span><span class="label">Hojas de vida analizadas</span></div>
+      <div class="card stat"><span class="value">{{ run.wallMs | number }} ms</span><span class="label">Tiempo total ({{ run.mode === 'worker' ? 'Web Worker' : 'hilo principal' }})</span></div>
+      <div class="card stat"><span class="value">{{ run.output.averageScore }}</span><span class="label">Puntaje promedio</span></div>
+      <div class="card stat">
+        <div class="chips">
+          <span class="badge high">{{ run.output.counts.high | number }} alto</span>
+          <span class="badge medium">{{ run.output.counts.medium | number }} medio</span>
+          <span class="badge low">{{ run.output.counts.low | number }} bajo</span>
+        </div>
+        <span class="label">Clasificación</span>
+      </div>
+    </div>
+
+    <div class="grid cols-2">
+      <div class="card">
+        <h2>Comparación de ejecuciones</h2>
+        <table>
+          <thead><tr><th>Modo</th><th class="num">Hojas de vida</th><th class="num">Cálculo</th><th class="num">Total</th></tr></thead>
+          <tbody>
+            @for (r of runs(); track $index) {
+              <tr>
+                <td><span class="badge" [class.high]="r.mode === 'worker'" [class.low]="r.mode === 'main'">{{ r.mode === 'worker' ? 'Web Worker' : 'Hilo principal' }}</span></td>
+                <td class="num">{{ r.output.total | number }}</td>
+                <td class="num">{{ r.output.elapsedMs | number }} ms</td>
+                <td class="num">{{ r.wallMs | number }} ms</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <p class="hint">El cálculo tarda parecido en ambos modos; la diferencia es que el Web Worker no bloquea la pantalla.</p>
+      </div>
+
+      <div class="card">
+        <h2>Mejores 50 resultados</h2>
+        <div class="top">
+          @for (r of run.output.top; track $index) {
+            <div class="top-row">
+              <span class="pos">{{ $index + 1 }}</span>
+              <div class="stack" style="gap: 4px; flex: 1">
+                <strong class="small">{{ r.name }}</strong>
+                <div class="chips">
+                  @for (s of r.matched; track s) { <span class="chip good">{{ s }}</span> }
+                  @for (s of r.inferred; track s) { <span class="chip warn">{{ s }}*</span> }
+                </div>
+              </div>
+              <app-score-bar [score]="r.score" [classification]="r.classification" [showLabel]="false" />
+            </div>
+          }
+        </div>
+        <p class="hint">* habilidad inferida (cuenta al 75 %).</p>
+      </div>
+    </div>
+  }
+</div>

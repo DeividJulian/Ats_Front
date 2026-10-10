@@ -1,0 +1,9 @@
+.layout { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; align-items: start; }
+.value { color: var(--accent); }
+.heart { border-color: rgba(124, 92, 255, 0.45); }
+.track { position: relative; height: 34px; width: 100%; max-width: 236px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.ball { position: absolute; left: 4px; top: 4px; width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #ff7a45); }
+.top { display: grid; gap: 8px; max-height: 520px; overflow-y: auto; padding-right: 4px; }
+.top-row { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); }
+.pos { width: 26px; text-align: center; font-weight: 800; color: var(--accent); }
+@media (max-width: 960px) { .layout { grid-template-columns: 1fr; } }

@@ -1,0 +1,39 @@
+<div class="shell" [class.menu-open]="menuOpen()">
+  <aside class="sidebar">
+    <a class="brand" routerLink="/">
+      <span class="logo">T</span>
+      <span>Talento<span class="dot">.</span></span>
+    </a>
+
+    <nav aria-label="Menú principal">
+      @for (item of nav(); track item.path) {
+        <a [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: !!item.exact }">
+          <span class="icon" aria-hidden="true">{{ item.icon }}</span>
+          {{ item.label }}
+        </a>
+      }
+    </nav>
+
+    <div class="user">
+      <span class="avatar">{{ initials() }}</span>
+      <div class="who">
+        <strong>{{ auth.user()?.name }}</strong>
+        <span class="badge" [class]="auth.role()">{{ auth.role() | label: 'role' }}</span>
+      </div>
+      <button type="button" class="btn small ghost" title="Cerrar sesión" (click)="logout()">Salir</button>
+    </div>
+  </aside>
+
+  <div class="content">
+    <header class="mobile-bar">
+      <button type="button" class="btn small" aria-label="Abrir menú" (click)="menuOpen.set(!menuOpen())">☰</button>
+      <a class="brand" routerLink="/">Talento<span class="dot">.</span></a>
+      <span class="avatar small">{{ initials() }}</span>
+    </header>
+    <router-outlet />
+  </div>
+
+  @if (menuOpen()) {
+    <div class="scrim" (click)="menuOpen.set(false)"></div>
+  }
+</div>
