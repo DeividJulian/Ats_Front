@@ -6,7 +6,7 @@
  * IMPORTANT: set PRODUCTION_API to your Render service URL (without a trailing "/").
  */
 const LOCAL_API = 'http://127.0.0.1:8001';
-const PRODUCTION_API = 'https://TU-SERVICIO.onrender.com';
+const PRODUCTION_API = 'https://ats-backend-xtp7.onrender.com';
 
 const isLocal =
   typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
