@@ -15,6 +15,7 @@ import { applicationCounts } from './portal/home/home';
 import { jobsWithFit } from './portal/jobs/jobs';
 import { profileChecklist, profileCompleteness } from './portal/profile-completeness';
 import { parsePastedResumes } from './staff/bulk-analysis/bulk-analysis';
+import { averageScore, greetingFor } from './staff/dashboard/dashboard';
 
 const JOB: PublicJob = {
   id: 1,
@@ -152,5 +153,13 @@ describe('page helpers', () => {
   it('splits pasted resumes on lines with ---', () => {
     const resumes = parsePastedResumes('Ana Ruiz\nContadora\n---\nLuis Mora\nDesarrollador\n\n---\n\n');
     expect(resumes.map((r) => r.name)).toEqual(['Ana Ruiz', 'Luis Mora']);
+  });
+
+  it('greets by the time of day and weights the average score', () => {
+    expect(greetingFor(8)).toBe('Buenos días');
+    expect(greetingFor(15)).toBe('Buenas tardes');
+    expect(greetingFor(21)).toBe('Buenas noches');
+    expect(averageScore([{ applications: 3, average_score: 80 }, { applications: 1, average_score: 40 }])).toBe(70);
+    expect(averageScore([])).toBe(0);
   });
 });
