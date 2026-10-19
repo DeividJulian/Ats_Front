@@ -1,58 +1,111 @@
 <div class="page">
   <div class="page-head">
-    <div>
-      <div class="eyebrow">Mi perfil</div>
-      <h1>Tu perfil profesional</h1>
-      <p class="subtle">Las empresas te evalúan por esto, nunca por tu nombre, edad ni género.</p>
+    <div class="page-head__text">
+      <h1 class="t-h1">Mi perfil</h1>
+      <p class="t-muted">Las empresas te evalúan por esto, nunca por tu nombre, edad ni género.</p>
     </div>
+    @if (!loading()) {
+      <button type="button" class="btn btn--primary" [class.is-loading]="saving()" [disabled]="saving()" (click)="save()">
+        @if (saving()) { <span class="spinner"></span>Guardando… } @else { <app-icon [icon]="i.Save" [size]="18" />Guardar cambios }
+      </button>
+    }
   </div>
 
   @if (loading()) {
-    <div class="card stack"><div class="skeleton"></div><div class="skeleton"></div></div>
+    <div class="split split--wide">
+      <div class="card card--lg stack"><span class="skeleton sk-title"></span><span class="skeleton sk-line"></span><span class="skeleton sk-line"></span><span class="skeleton sk-block"></span></div>
+      <div class="card card--lg stack"><span class="skeleton sk-block"></span></div>
+    </div>
   } @else {
-    @if (completeness(); as c) {
-      <div class="card stack">
-        <div class="row"><strong>Perfil completo al {{ c.pct }}%</strong><span class="spacer"></span>@if (c.pct === 100) { <span class="badge high">¡Excelente!</span> }</div>
-        <div class="meter"><span [style.width.%]="c.pct"></span></div>
-        @if (c.missing.length) { <span class="small subtle">Te falta: {{ c.missing.join(' · ') }}</span> }
-      </div>
-    }
-
-    <div class="layout">
-      <div class="col">
-        <div class="card stack">
-          <h2>📄 Tu hoja de vida</h2>
-          <p class="subtle small">Súbela en PDF y llenamos tu perfil automáticamente: habilidades, experiencia y educación.</p>
-          <app-pdf-drop [busy]="uploading()" (fileSelected)="upload($event)" />
-        </div>
-
-        <form class="card form" [formGroup]="form" (ngSubmit)="save()" novalidate>
-          <h2>Tus datos</h2>
-          <div class="two">
-            <label>Nombre<input formControlName="name" autocomplete="name" />
-              @if (form.controls.name.touched && form.controls.name.invalid) { <span class="error-text">Mínimo 2 caracteres</span> }
-            </label>
-            <label>Correo<input [value]="profile()?.email" disabled title="Es tu usuario: no se puede cambiar" /></label>
-            <label>Teléfono<input type="tel" formControlName="phone" autocomplete="tel" /></label>
-            <label>Años de experiencia <span class="hint">(vacío: se detecta)</span><input type="number" min="0" max="45" formControlName="experience_years" /></label>
-            <label>Nivel educativo
-              <select formControlName="education_level">
-                <option value="">Detectar de la hoja de vida</option>
-                @for (l of levels; track l.value) { <option [value]="l.value">{{ l.label }}</option> }
-              </select>
-            </label>
-            <label>Habilidades <span class="hint">(separadas por comas)</span><input formControlName="skills" placeholder="excel, atención al cliente, python…" /></label>
+    <div class="split split--wide">
+      <div class="stack stack--lg">
+        <form class="card card--lg stack" [formGroup]="form" (ngSubmit)="save()" novalidate>
+          <h2 class="card__title">Datos personales</h2>
+          <div class="form-grid">
+            <div class="field">
+              <label class="field__label" for="pf-name">Nombre completo <span class="req">*</span></label>
+              <input class="input" id="pf-name" formControlName="name" autocomplete="name" [class.is-invalid]="form.controls.name.touched && form.controls.name.invalid" />
+              @if (form.controls.name.touched && form.controls.name.invalid) { <span class="field__error"><app-icon [icon]="i.CircleAlert" [size]="15" />Mínimo 2 caracteres</span> }
+            </div>
+            <div class="field">
+              <label class="field__label" for="pf-mail">Correo</label>
+              <input class="input" id="pf-mail" [value]="profile()?.email" disabled />
+              <span class="field__hint">Es tu usuario: no se puede cambiar.</span>
+            </div>
+            <div class="field">
+              <label class="field__label" for="pf-phone">Celular</label>
+              <input class="input" id="pf-phone" type="tel" formControlName="phone" autocomplete="tel" placeholder="310 456 7890" />
+            </div>
+            <div class="field">
+              <label class="field__label" for="pf-exp">Años de experiencia</label>
+              <input class="input" id="pf-exp" type="number" min="0" max="45" formControlName="experience_years" placeholder="Se detecta de la hoja de vida" />
+            </div>
+            <div class="field full">
+              <label class="field__label" for="pf-edu">Nivel educativo</label>
+              <span class="control">
+                <select class="select" id="pf-edu" formControlName="education_level">
+                  <option value="">Detectar de la hoja de vida</option>
+                  @for (l of levels; track l.value) { <option [value]="l.value">{{ l.label }}</option> }
+                </select>
+              </span>
+            </div>
+            <div class="field full">
+              <label class="field__label" for="pf-cv">Texto de tu hoja de vida</label>
+              <textarea class="textarea textarea--tall" id="pf-cv" formControlName="resume_text" placeholder="Si no tienes PDF, pega aquí tu experiencia, estudios y herramientas que manejas…"></textarea>
+              <span class="field__hint">Entre más concreto, mejor funciona el ranking: herramientas, cargos y logros.</span>
+            </div>
           </div>
-          <label>Texto de tu hoja de vida <span class="hint">(si no tienes PDF, pégalo aquí)</span>
-            <textarea formControlName="resume_text" rows="8" placeholder="Cuéntanos tu experiencia, estudios y herramientas que manejas…"></textarea>
-          </label>
-          <div><button type="submit" class="btn primary" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar perfil' }}</button></div>
         </form>
+
+        <section class="card card--lg stack">
+          <div class="row row--between"><h2 class="card__title">Habilidades</h2><span class="t-small t-muted">{{ skills().length }} registradas</span></div>
+          <p class="t-small t-muted">Escribe herramientas y conocimientos concretos. El sistema las compara con las de cada vacante.</p>
+          @if (skills().length) {
+            <div class="chips">
+              @for (s of skills(); track s) {
+                <span class="chip">{{ s }}<button type="button" class="chip__x" [attr.aria-label]="'Quitar ' + s" (click)="removeSkill(s)"><app-icon [icon]="i.X" [size]="14" /></button></span>
+              }
+            </div>
+          }
+          <form class="row row--nowrap" (submit)="$event.preventDefault(); addSkill()">
+            <label class="sr-only" for="pf-skill">Nueva habilidad</label>
+            <input class="input" id="pf-skill" placeholder="Ej. Power BI, World Office, inglés B1" [value]="newSkill()" (input)="newSkill.set($any($event.target).value)" />
+            <button type="submit" class="btn btn--secondary"><app-icon [icon]="i.Plus" [size]="18" />Agregar</button>
+          </form>
+          @if (suggested().length) {
+            <div class="row t-small">
+              <span class="t-muted">Sugeridas por las vacantes:</span>
+              @for (s of suggested(); track s) { <button type="button" class="chip chip--more" (click)="addSkill(s)">+ {{ s }}</button> }
+            </div>
+          }
+        </section>
       </div>
 
-      <div class="col">
+      <aside class="stack stack--lg">
+        <section class="card card--lg stack">
+          <div class="row row--between"><h2 class="card__title">Hoja de vida</h2><span class="badge">PDF · máx. 5 MB</span></div>
+          @if (profile()?.resume_text) {
+            <div class="alert alert--success"><app-icon [icon]="i.CircleCheck" [size]="20" /><div class="alert__body">Tu hoja de vida está cargada y tenemos {{ profile()?.skills?.length }} habilidades. Sube otra para reemplazarla.</div></div>
+          }
+          <app-pdf-drop [text]="profile()?.resume_text ? 'Reemplazar mi hoja de vida' : 'Arrastra tu PDF aquí'" [busy]="uploading()" (fileSelected)="upload($event)" />
+        </section>
+
+        @if (completeness(); as c) {
+          <section class="card stack">
+            <h2 class="card__title">Tu perfil está al {{ c.pct }} %</h2>
+            <div class="progress" role="progressbar" [attr.aria-valuenow]="c.pct" aria-valuemin="0" aria-valuemax="100" aria-label="Perfil completo"><div class="progress__bar" [style.width.%]="c.pct"></div></div>
+            <ul class="stack stack--sm t-small">
+              @for (item of checklist(); track item.label) {
+                <li class="row row--nowrap" [class.t-muted]="!item.done">
+                  <app-icon [class]="item.done ? 'ok' : 't-muted'" [icon]="item.done ? i.CircleCheck : i.Circle" [size]="18" />{{ item.label }}
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
         <app-insights-card [insights]="insights()" title="Así te ven las empresas" />
-      </div>
+      </aside>
     </div>
   }
 </div>

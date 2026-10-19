@@ -11,8 +11,9 @@ import { Login } from './auth/login';
 import { passwordsMatch } from './auth/register';
 import { Landing } from './landing/landing';
 import { timeline } from './portal/applications/applications';
+import { applicationCounts } from './portal/home/home';
 import { jobsWithFit } from './portal/jobs/jobs';
-import { profileCompleteness } from './portal/profile-completeness';
+import { profileChecklist, profileCompleteness } from './portal/profile-completeness';
 import { parsePastedResumes } from './staff/bulk-analysis/bulk-analysis';
 
 const JOB: PublicJob = {
@@ -126,6 +127,15 @@ describe('page helpers', () => {
     expect(profileCompleteness(empty)).toEqual({ pct: 0, missing: expect.any(Array) });
     const full = { ...empty, phone: '300', resume_text: 'x'.repeat(100), skills: ['a', 'b', 'c'], experience_years: 2, education_level: 'professional' as const };
     expect(profileCompleteness(full)).toEqual({ pct: 100, missing: [] });
+    expect(profileChecklist(empty).every((c) => !c.done)).toBe(true);
+    expect(profileChecklist({ ...empty, phone: '300' }).filter((c) => c.done)).toHaveLength(1);
+  });
+
+  it('counts the candidate applications by stage', () => {
+    const a = (status: MyApplication['status']) => ({ status }) as MyApplication;
+    expect(applicationCounts([a('new'), a('interview'), a('offer'), a('shortlisted'), a('rejected'), a('hired')])).toEqual({
+      total: 6, active: 4, interview: 2, shortlisted: 1,
+    });
   });
 
   it('orders open jobs by the candidate fit and marks the ones already applied', () => {

@@ -241,7 +241,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .input:disabled, .select:disabled, .textarea:disabled { background: var(--c-surface-2); color: var(--c-text-2); cursor: not-allowed; }
 .textarea { min-height: 128px; resize: vertical; line-height: 1.55; }
 .textarea--tall { min-height: 220px; }
-.select { appearance: none; -webkit-appearance: none; padding-right: 42px; cursor: pointer; }
+.select, select { appearance: none; -webkit-appearance: none; padding-right: 42px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%238a8f9c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center; }
 .control { position: relative; display: block; }
 .control > .ic { position: absolute; top: 50%; transform: translateY(-50%); color: var(--c-text-2); pointer-events: none; }
 .control > .ic:first-child { left: 14px; }
@@ -295,6 +297,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .badge--nuevo { background: var(--c-info-soft); color: var(--c-info); border-color: transparent; }
 .badge--preseleccionado { background: var(--c-peach); color: var(--c-on-peach); border-color: transparent; }
 .badge--entrevista { background: var(--c-warning-soft); color: var(--c-warning); border-color: transparent; }
+.badge--oferta { background: var(--c-primary-soft); color: var(--c-primary); border-color: transparent; }
 .badge--contratado { background: var(--c-success-soft); color: var(--c-success); border-color: transparent; }
 .badge--rechazado { background: var(--c-danger-soft); color: var(--c-danger-text); border-color: transparent; }
 .badge--abierta { background: var(--c-success-soft); color: var(--c-success); border-color: transparent; }
@@ -620,7 +623,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .toast { width: 100%; }
   .breakdown__row { grid-template-columns: 100px minmax(0, 1fr) 36px; }
   .steps__item span.lbl { display: none; }
-  .steps__item.is-current span.lbl { display: inline; }
   .tabs { margin: 0 -16px; padding: 0 16px; }
 }
 

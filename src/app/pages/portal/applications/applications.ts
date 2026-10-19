@@ -1,13 +1,16 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Check, FileText } from 'lucide-angular';
 
 import { ApplicationStatus, MyApplication } from '../../../core/models';
 import { PortalService } from '../../../core/services/api.services';
 import { ToastService } from '../../../core/services/toast.service';
-import { errorMessage } from '../../../core/utils/http-error';
-import { APPLICATION_STATUS_LABELS, PIPELINE } from '../../../core/utils/labels';
+import { errorMessage, initials } from '../../../core/utils/http-error';
+import { APPLICATION_STATUS_LABELS, PIPELINE, statusBadge } from '../../../core/utils/labels';
 import { reloadOnRemoteChanges } from '../../../core/workers/tab-sync.service';
+import { Icon } from '../../../shared/icon';
+import { LabelPipe } from '../../../shared/label.pipe';
 
 export interface TimelineStep {
   status: ApplicationStatus;
@@ -30,83 +33,118 @@ const STATUS_MESSAGES: Record<ApplicationStatus, string> = {
   shortlisted: '¡Buenas noticias! Pasaste el primer filtro.',
   interview: 'Estás en etapa de entrevista. Prepárate: revisa las habilidades de la vacante.',
   offer: '¡Tienes una oferta! El equipo se pondrá en contacto contigo.',
-  hired: '¡Felicitaciones, fuiste contratado! 🎉',
-  rejected: 'En esta ocasión no continuaste en el proceso. Sigue postulándote: hay más vacantes para ti.',
+  hired: '¡Felicitaciones, fuiste contratado! La empresa te contactará para la firma del contrato.',
+  rejected: 'En esta ocasión no continuaste en el proceso. Tu hoja de vida sigue activa para nuevas vacantes.',
 };
+
+type Filter = 'all' | ApplicationStatus;
 
 @Component({
   selector: 'app-portal-applications',
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe, LabelPipe, Icon],
   template: `
-    <div class="page">
+    <div class="page narrow">
       <div class="page-head">
-        <div>
-          <div class="eyebrow">Postulaciones</div>
-          <h1>Mis postulaciones</h1>
-          <p class="subtle">Sigue en qué etapa va cada proceso.</p>
+        <div class="page-head__text">
+          <h1 class="t-h1">Mis postulaciones</h1>
+          <p class="t-muted">Sigue en qué etapa va cada proceso.</p>
         </div>
       </div>
 
       @if (loading()) {
-        <div class="card stack"><div class="skeleton"></div><div class="skeleton"></div></div>
+        <div class="card stack"><span class="skeleton sk-title"></span><span class="skeleton sk-line"></span><span class="skeleton sk-line"></span></div>
       } @else if (applications().length === 0) {
-        <div class="empty">
-          <span class="big">📋</span>
-          <strong>Todavía no te has postulado a ninguna vacante</strong>
-          <a class="btn primary small" routerLink="/portal/vacantes">Ver vacantes</a>
+        <div class="card empty">
+          <span class="empty__icon"><app-icon [icon]="i.FileText" [size]="32" /></span>
+          <p class="empty__title">Todavía no te has postulado a ninguna vacante</p>
+          <p class="empty__text">Las vacantes están ordenadas según qué tan bien encajan contigo.</p>
+          <a class="btn btn--primary" routerLink="/portal/vacantes">Ver vacantes</a>
         </div>
       } @else {
-        <div class="list">
-          @for (a of applications(); track a.id) {
-            <div class="card stack">
-              <div class="row">
-                <a [routerLink]="['/empleos', a.job_id]"><h3>{{ a.job_title }}</h3></a>
-                <span class="spacer"></span>
-                <span class="small subtle">Desde el {{ a.created_at | date: 'd MMM y' }}</span>
+        <div class="tabs" role="tablist" aria-label="Filtrar por estado">
+          @for (t of tabs(); track t.value) {
+            <button type="button" class="tab" role="tab" [class.is-active]="filter() === t.value" [attr.aria-selected]="filter() === t.value" (click)="filter.set(t.value)">
+              {{ t.label }} <span class="count">{{ t.count }}</span>
+            </button>
+          }
+        </div>
+
+        <div class="stack">
+          @for (a of visible(); track a.id) {
+            <article class="card stack">
+              <div class="row row--nowrap row--top">
+                <span class="avatar">{{ initials(a.job_title) }}</span>
+                <div class="list__main">
+                  <h2 class="t-h3"><a class="title-link" [routerLink]="['/empleos', a.job_id]">{{ a.job_title }}</a></h2>
+                  <p class="t-small t-muted">Postulada el {{ a.created_at | date: 'd MMM y' }}</p>
+                </div>
+                <span [class]="statusBadge(a.status)">{{ a.status | label: 'status' }}</span>
               </div>
 
-              <ol class="timeline" [class.rejected]="a.status === 'rejected'">
-                @for (step of steps(a.status); track step.status) {
-                  <li [class]="step.state"><span class="dot"></span><span class="small">{{ step.label }}</span></li>
-                }
-              </ol>
+              @if (a.status !== 'rejected') {
+                <ol class="steps" aria-label="Avance del proceso">
+                  @for (s of steps(a.status); track s.status; let last = $last) {
+                    <li class="steps__item" [class.is-done]="s.state === 'done' || (s.state === 'current' && last)" [class.is-current]="s.state === 'current' && !last">
+                      <span class="steps__dot">@if (s.state === 'done' || (s.state === 'current' && last)) { <app-icon [icon]="i.Check" [size]="13" [stroke]="3" /> }</span>
+                      <span class="lbl">{{ s.label }}</span>
+                      @if (!last) { <span class="steps__line"></span> }
+                    </li>
+                  }
+                </ol>
+              }
 
-              <div class="notice small" [class.good]="a.status === 'hired' || a.status === 'offer'" [class.error]="a.status === 'rejected'">{{ message(a.status) }}</div>
+              <p class="t-small note" [class.note--good]="a.status === 'hired' || a.status === 'offer'">{{ message(a.status) }}</p>
 
               @if (a.missing_skills.length && a.status !== 'hired') {
-                <span class="small subtle">Para destacar en vacantes como esta, fortalece: {{ a.missing_skills.join(', ') }}</span>
+                <p class="t-small t-muted">Para destacar en vacantes como esta, fortalece: {{ a.missing_skills.join(', ') }}</p>
               }
-              @if (a.status !== 'hired') {
-                <div><button type="button" class="btn small ghost danger" (click)="withdraw(a)">Retirar postulación</button></div>
-              }
-            </div>
+              <div class="row">
+                <a class="btn btn--ghost btn--sm" [routerLink]="['/empleos', a.job_id]">Ver vacante</a>
+                @if (a.status !== 'hired' && a.status !== 'rejected') {
+                  <button type="button" class="btn btn--danger-ghost btn--sm" (click)="withdraw(a)">Retirar postulación</button>
+                }
+              </div>
+            </article>
+          } @empty {
+            <div class="card card--flat"><p class="t-small t-muted">No tienes postulaciones en este estado.</p></div>
           }
         </div>
       }
     </div>
   `,
   styles: `
-    .list { display: grid; gap: 14px; }
-    h3 { color: var(--text); }
-    .timeline { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-    .timeline li { display: grid; justify-items: center; gap: 6px; text-align: center; position: relative; color: var(--muted); }
-    .timeline li::before { content: ''; position: absolute; top: 9px; left: -50%; width: 100%; height: 3px; background: var(--surface-3); z-index: 0; }
-    .timeline li:first-child::before { display: none; }
-    .dot { width: 20px; height: 20px; border-radius: 50%; background: var(--surface-3); border: 3px solid var(--surface); position: relative; z-index: 1; }
-    .timeline .done { color: var(--text); }
-    .timeline .done .dot, .timeline .done::before, .timeline .current::before { background: var(--good); }
-    .timeline .current { color: var(--text); font-weight: 700; }
-    .timeline .current .dot { background: var(--accent); box-shadow: 0 0 0 4px rgba(245, 165, 36, 0.25); }
-    .timeline.rejected .dot { background: var(--surface-3); }
+    .narrow { max-width: 1000px; }
+    .title-link { color: var(--c-text); }
+    .title-link:hover { color: var(--c-primary); }
+    .note { padding: 12px 14px; background: var(--c-surface-2); border-radius: 12px; color: var(--c-text-2); }
+    .note--good { background: var(--c-success-soft); color: var(--c-text); }
   `,
 })
 export class PortalApplications {
   private readonly portal = inject(PortalService);
   private readonly toasts = inject(ToastService);
 
+  protected readonly i = { Check, FileText };
+  protected readonly initials = initials;
+  protected readonly statusBadge = statusBadge;
   protected readonly applications = signal<MyApplication[]>([]);
   protected readonly loading = signal(true);
+  protected readonly filter = signal<Filter>('all');
   protected readonly steps = timeline;
+
+  protected readonly tabs = computed(() => {
+    const list = this.applications();
+    const statuses = [...PIPELINE, 'rejected' as const].filter((s) => list.some((a) => a.status === s));
+    return [
+      { value: 'all' as Filter, label: 'Todas', count: list.length },
+      ...statuses.map((s) => ({ value: s as Filter, label: APPLICATION_STATUS_LABELS[s], count: list.filter((a) => a.status === s).length })),
+    ];
+  });
+
+  protected readonly visible = computed(() => {
+    const f = this.filter();
+    return f === 'all' ? this.applications() : this.applications().filter((a) => a.status === f);
+  });
 
   constructor() {
     reloadOnRemoteChanges(() => this.load());

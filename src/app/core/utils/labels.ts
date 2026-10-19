@@ -20,6 +20,21 @@ export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
   rejected: 'Rechazado',
 };
 
+/** Design class suffix of each status: <span class="badge" [class]="'badge--' + tone">. */
+export const STATUS_TONES: Record<ApplicationStatus, string> = {
+  new: 'nuevo',
+  shortlisted: 'preseleccionado',
+  interview: 'entrevista',
+  offer: 'oferta',
+  hired: 'contratado',
+  rejected: 'rechazado',
+};
+
+/** Full badge classes of an application status. */
+export function statusBadge(status: ApplicationStatus | string): string {
+  return `badge badge--dot badge--${STATUS_TONES[status as ApplicationStatus] ?? 'cerrada'}`;
+}
+
 /** Pipeline order shown to the user (rejected goes apart). */
 export const PIPELINE: ApplicationStatus[] = ['new', 'shortlisted', 'interview', 'offer', 'hired'];
 

@@ -1,5 +1,5 @@
 import { Component, input, output, signal } from '@angular/core';
-import { CloudUpload } from 'lucide-angular';
+import { CircleAlert, CloudUpload } from 'lucide-angular';
 
 import { Icon } from './icon';
 
@@ -19,32 +19,34 @@ export function pdfProblem(file: File): string | null {
   imports: [Icon],
   template: `
     <label
-      class="drop"
-      [class.over]="over()"
+      class="dropzone"
+      [class.is-over]="over()"
+      [class.is-error]="!!problem()"
       [class.busy]="busy()"
       (dragover)="$event.preventDefault(); over.set(true)"
       (dragleave)="over.set(false)"
       (drop)="onDrop($event)"
     >
-      <input type="file" accept="application/pdf,.pdf" [disabled]="busy()" (change)="onChoose($event)" />
+      <input type="file" accept="application/pdf,.pdf" [disabled]="busy()" (change)="onChoose($event)" [attr.aria-label]="text()" />
       @if (busy()) {
-        <span class="spinner"></span>
-        <span>Leyendo la hoja de vida…</span>
+        <span class="spinner spinner--lg t-primary"></span>
+        <span class="t-strong">Leyendo la hoja de vida…</span>
+        <span class="t-small t-muted">Detectamos habilidades, experiencia y educación</span>
       } @else {
-        <span class="icon-tile"><app-icon [icon]="uploadIcon" [size]="22" /></span>
-        <strong>{{ text() }}</strong>
-        <span class="hint">Arrastra el PDF aquí o haz clic para elegirlo (máximo 5 MB)</span>
-      }
-      @if (problem()) {
-        <span class="error-text">{{ problem() }}</span>
+        <span class="dropzone__icon"><app-icon [icon]="i.CloudUpload" [size]="24" /></span>
+        <span class="t-strong">{{ text() }}</span>
+        <span class="t-small t-muted">Arrástralo aquí o <span class="t-primary t-strong">elige un archivo</span> · PDF de máximo 5 MB</span>
       }
     </label>
+    @if (problem()) {
+      <span class="field__error" role="alert"><app-icon [icon]="i.CircleAlert" [size]="15" />{{ problem() }}</span>
+    }
   `,
   styles: `
-    .drop { position: relative; display: grid; justify-items: center; gap: 6px; padding: 24px 18px; text-align: center; border: 2px dashed #cdd5e5; border-radius: var(--radius); background: var(--surface-2); cursor: pointer; color: var(--text); transition: border-color 0.15s ease, background 0.15s ease; }
-    .drop:hover, .drop.over { border-color: var(--accent); background: #fff8ef; }
-    .drop.busy { cursor: progress; }
-    input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    :host { display: flex; flex-direction: column; gap: 8px; }
+    .dropzone { position: relative; }
+    .dropzone.busy { cursor: progress; }
+    input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
   `,
 })
 export class PdfDrop {
@@ -52,7 +54,7 @@ export class PdfDrop {
   readonly busy = input(false);
   readonly fileSelected = output<File>();
 
-  protected readonly uploadIcon = CloudUpload;
+  protected readonly i = { CircleAlert, CloudUpload };
 
   protected readonly over = signal(false);
   protected readonly problem = signal<string | null>(null);

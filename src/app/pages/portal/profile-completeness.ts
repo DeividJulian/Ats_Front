@@ -14,6 +14,11 @@ const CHECKS: { label: string; done: (c: Candidate) => boolean }[] = [
   { label: 'Agrega un teléfono de contacto', done: (c) => !!c.phone },
 ];
 
+/** Every check with whether this profile passes it, for the checklist. */
+export function profileChecklist(candidate: Candidate): { label: string; done: boolean }[] {
+  return CHECKS.map((check) => ({ label: check.label, done: check.done(candidate) }));
+}
+
 /** How complete the profile is: the more complete, the better the recommendations. */
 export function profileCompleteness(candidate: Candidate): Completeness {
   const missing = CHECKS.filter((check) => !check.done(candidate)).map((check) => check.label);

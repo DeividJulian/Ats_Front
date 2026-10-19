@@ -1,15 +1,20 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Briefcase, CircleCheck, CircleX, Clock, CloudOff, GraduationCap, Search, SearchX } from 'lucide-angular';
 import { forkJoin } from 'rxjs';
 
-import { JobRecommendation, MyApplication, PublicJob } from '../../../core/models';
+import { Area, JobRecommendation, MyApplication, PublicJob } from '../../../core/models';
 import { PortalService, PublicService } from '../../../core/services/api.services';
 import { ToastService } from '../../../core/services/toast.service';
-import { errorMessage } from '../../../core/utils/http-error';
+import { areaOf } from '../../../core/utils/areas';
+import { errorMessage, initials } from '../../../core/utils/http-error';
+import { AREA_LABELS, statusBadge } from '../../../core/utils/labels';
 import { normalize } from '../../../core/workers/cv-analysis.logic';
 import { reloadOnRemoteChanges } from '../../../core/workers/tab-sync.service';
+import { AgoPipe } from '../../../shared/ago.pipe';
+import { Icon } from '../../../shared/icon';
 import { LabelPipe } from '../../../shared/label.pipe';
-import { ScoreBar } from '../../../shared/score-bar';
+import { scoreTone } from '../../../shared/score-bar';
 
 export interface JobWithFit {
   job: PublicJob;
@@ -26,66 +31,109 @@ export function jobsWithFit(jobs: PublicJob[], fits: JobRecommendation[], applic
     .sort((a, b) => (b.fit?.score ?? -1) - (a.fit?.score ?? -1));
 }
 
+type AreaFilter = 'all' | Area;
+
 @Component({
   selector: 'app-portal-jobs',
-  imports: [RouterLink, LabelPipe, ScoreBar],
+  imports: [RouterLink, LabelPipe, AgoPipe, Icon],
   template: `
     <div class="page">
       <div class="page-head">
-        <div>
-          <div class="eyebrow">Vacantes</div>
-          <h1>Vacantes abiertas</h1>
-          <p class="subtle">Ordenadas según qué tan bien encajan con tu perfil.</p>
+        <div class="page-head__text">
+          <h1 class="t-h1">Vacantes</h1>
+          <p class="t-muted">Empleos abiertos, ordenados según qué tan bien encajan con tu perfil.</p>
         </div>
-        <input type="search" class="search" placeholder="Buscar por cargo o habilidad…" aria-label="Buscar vacante" (input)="search.set($any($event.target).value)" />
       </div>
 
+      <div class="card card--tight toolbar">
+        <span class="control control--icon">
+          <app-icon [icon]="i.Search" [size]="20" />
+          <input class="input" type="search" aria-label="Buscar vacantes" placeholder="Cargo o habilidad (ej. Siigo)" [value]="search()" (input)="search.set($any($event.target).value)" />
+        </span>
+        <span class="control sort">
+          <select class="select" aria-label="Ordenar" [value]="sort()" (change)="sort.set($any($event.target).value)">
+            <option value="fit">Mejor ajuste primero</option>
+            <option value="recent">Más recientes primero</option>
+          </select>
+        </span>
+      </div>
+
+      @if (areaFilters().length > 2) {
+        <div class="chips" role="group" aria-label="Área profesional">
+          @for (a of areaFilters(); track a.value) {
+            <button type="button" class="filter" [class.is-active]="area() === a.value" [attr.aria-pressed]="area() === a.value" (click)="area.set(a.value)">
+              {{ a.label }} <span class="count">{{ a.count }}</span>
+            </button>
+          }
+        </div>
+      }
+
       @if (loading()) {
-        <div class="card stack"><div class="skeleton"></div><div class="skeleton"></div></div>
+        <div class="grid-2">@for (n of [1, 2, 3, 4]; track n) { <div class="card stack"><span class="skeleton sk-title"></span><span class="skeleton sk-line"></span><span class="skeleton sk-line"></span></div> }</div>
       } @else if (error()) {
-        <div class="empty"><strong>{{ error() }}</strong><button type="button" class="btn small" (click)="load()">Reintentar</button></div>
+        <div class="card empty">
+          <span class="empty__icon empty__icon--danger"><app-icon [icon]="i.CloudOff" [size]="32" /></span>
+          <p class="empty__title">No pudimos cargar las vacantes</p>
+          <p class="empty__text">{{ error() }}</p>
+          <button type="button" class="btn btn--secondary" (click)="load()">Reintentar</button>
+        </div>
       } @else if (visible().length === 0) {
-        <div class="empty"><span class="big">🔍</span><strong>No hay vacantes que coincidan</strong></div>
+        <div class="card empty">
+          <span class="empty__icon"><app-icon [icon]="i.SearchX" [size]="32" /></span>
+          <p class="empty__title">No encontramos vacantes con esos filtros</p>
+          <p class="empty__text">Prueba con otra palabra o cambia el área.</p>
+          <button type="button" class="btn btn--secondary" (click)="clear()">Limpiar filtros</button>
+        </div>
       } @else {
-        <div class="grid cols-2">
+        <p class="t-small t-muted" aria-live="polite"><span class="t-strong count-text">{{ visible().length }}</span> vacantes encontradas</p>
+        <div class="grid-2">
           @for (item of visible(); track item.job.id) {
-            <div class="card stack">
-              <div class="row">
-                <a [routerLink]="['/empleos', item.job.id]"><h3>{{ item.job.title }}</h3></a>
-                <span class="spacer"></span>
+            <article class="card stack stack--sm">
+              <div class="row row--nowrap row--top">
+                <span class="avatar">{{ initials(item.job.title) }}</span>
+                <div class="list__main">
+                  <h2 class="t-h3">{{ item.job.title }}</h2>
+                  <p class="t-small t-muted">{{ areaLabel(item.job.required_skills) }}</p>
+                </div>
                 @if (item.application) {
-                  <span class="badge" [class]="item.application.status">Postulado · {{ item.application.status | label: 'status' }}</span>
+                  <span [class]="statusBadge(item.application.status)">{{ item.application.status | label: 'status' }}</span>
+                } @else if (item.fit; as fit) {
+                  <span class="score-pill" [class]="'score-pill--' + tone(fit.classification)" [title]="'Tu ajuste: ' + fit.score + ' de 100'">{{ fit.score }}</span>
                 }
               </div>
-              <p class="subtle small clamp">{{ item.job.description }}</p>
+              <div class="meta">
+                <span><app-icon [icon]="i.Briefcase" [size]="16" />{{ item.job.min_experience_years ? item.job.min_experience_years + ' años' : 'Sin experiencia mínima' }}</span>
+                <span><app-icon [icon]="i.GraduationCap" [size]="16" />{{ item.job.min_education_level | label: 'education' }}</span>
+                <span><app-icon [icon]="i.Clock" [size]="16" />{{ item.job.created_at | ago }}</span>
+              </div>
               @if (item.fit; as fit) {
-                <div class="stack" style="gap: 6px">
-                  <span class="small subtle">Tu ajuste</span>
-                  <app-score-bar [score]="fit.score" [classification]="fit.classification" />
-                </div>
                 <div class="chips">
-                  @for (s of fit.matching_skills; track s) { <span class="chip good">✓ {{ s }}</span> }
-                  @for (s of fit.missing_skills; track s) { <span class="chip bad">✗ {{ s }}</span> }
+                  @for (s of fit.matching_skills; track s) { <span class="chip chip--match"><app-icon [icon]="i.CircleCheck" [size]="15" />{{ s }}</span> }
+                  @for (s of fit.missing_skills; track s) { <span class="chip chip--miss"><app-icon [icon]="i.CircleX" [size]="15" />{{ s }}</span> }
                 </div>
               } @else {
                 <div class="chips">@for (s of item.job.required_skills; track s) { <span class="chip">{{ s }}</span> }</div>
               }
-              <div class="row">
-                <a class="btn small" [routerLink]="['/empleos', item.job.id]">Ver detalle</a>
+              <div class="card__foot">
+                <a class="btn btn--secondary btn--sm" [routerLink]="['/empleos', item.job.id]">Ver detalle</a>
+                <span class="spacer"></span>
                 @if (!item.application) {
-                  <button type="button" class="btn small primary" [disabled]="applying() === item.job.id" (click)="apply(item.job)">Postularme</button>
+                  <button type="button" class="btn btn--primary btn--sm" [class.is-loading]="applying() === item.job.id" [disabled]="applying() === item.job.id" (click)="apply(item.job)">
+                    @if (applying() === item.job.id) { <span class="spinner"></span>Enviando… } @else { Postularme }
+                  </button>
+                } @else {
+                  <span class="t-small t-muted">Ya te postulaste</span>
                 }
               </div>
-            </div>
+            </article>
           }
         </div>
       }
     </div>
   `,
   styles: `
-    .search { max-width: 300px; }
-    h3 { color: var(--text); }
-    .clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .sort { flex: 0 1 240px; }
+    .count-text { color: var(--c-text); }
   `,
 })
 export class PortalJobs {
@@ -93,23 +141,56 @@ export class PortalJobs {
   private readonly publicApi = inject(PublicService);
   private readonly toasts = inject(ToastService);
 
+  protected readonly i = { Briefcase, CircleCheck, CircleX, Clock, CloudOff, GraduationCap, Search, SearchX };
+  protected readonly initials = initials;
+  protected readonly statusBadge = statusBadge;
+  protected readonly tone = scoreTone;
   protected readonly items = signal<JobWithFit[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly search = signal('');
+  protected readonly area = signal<AreaFilter>('all');
+  protected readonly sort = signal<'fit' | 'recent'>('fit');
   protected readonly applying = signal<number | null>(null);
+
+  protected readonly areaFilters = computed(() => {
+    const counts = new Map<Area, number>();
+    for (const { job } of this.items()) {
+      const a = areaOf(job.required_skills);
+      counts.set(a, (counts.get(a) ?? 0) + 1);
+    }
+    return [
+      { value: 'all' as AreaFilter, label: 'Todas', count: this.items().length },
+      ...[...counts].map(([a, count]) => ({ value: a as AreaFilter, label: AREA_LABELS[a], count })),
+    ];
+  });
 
   protected readonly visible = computed(() => {
     const term = normalize(this.search().trim());
-    if (!term) return this.items();
-    return this.items().filter((i) => normalize(`${i.job.title} ${i.job.required_skills.join(' ')}`).includes(term));
+    const list = this.items().filter(
+      (i) =>
+        (this.area() === 'all' || areaOf(i.job.required_skills) === this.area()) &&
+        (!term || normalize(`${i.job.title} ${i.job.description} ${i.job.required_skills.join(' ')}`).includes(term)),
+    );
+    if (this.sort() === 'recent') return [...list].sort((a, b) => b.job.created_at.localeCompare(a.job.created_at));
+    return list;
   });
 
   constructor() {
     reloadOnRemoteChanges(() => this.load());
   }
 
+  protected areaLabel(skills: string[]): string {
+    return AREA_LABELS[areaOf(skills)];
+  }
+
+  protected clear(): void {
+    this.search.set('');
+    this.area.set('all');
+  }
+
   protected load(): void {
+    this.error.set(null);
     forkJoin({
       jobs: this.publicApi.jobs(),
       fits: this.portal.recommendedJobs(50),
