@@ -221,7 +221,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* ---------- 6. Formularios ---------- */
 .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.field__label { font-size: 13.5px; font-weight: 650; font-weight: 600; color: var(--c-text); }
+.field__label { display: block; font-size: 13.5px; font-weight: 650; font-weight: 600; color: var(--c-text); }
 .field__label .req { color: var(--c-danger-text); margin-left: 2px; }
 .field__hint { font-size: 13px; color: var(--c-text-2); }
 .field__error { font-size: 13px; color: var(--c-danger-text); font-weight: 600; display: flex; align-items: center; gap: 6px; }
@@ -247,6 +247,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .control > .ic:first-child { left: 14px; }
 .control > .ic--end { right: 14px; left: auto; }
 .control--icon .input { padding-left: 44px; }
+.control > app-icon:first-child { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--c-text-2); pointer-events: none; z-index: 1; }
+.control--icon input { padding-left: 44px !important; }
 .check { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14.5px; cursor: pointer; }
 .check input { width: 20px; height: 20px; accent-color: var(--c-primary); margin: 0; }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 20px; }
@@ -576,6 +578,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 @media (max-width: 760px) {
   .hide-m { display: none !important; }
   .show-m { display: revert !important; }
+  .brand.show-m, .row.show-m { display: inline-flex !important; }
   .container { padding: 0 16px; }
   .t-display { font-size: 34px; }
   .t-h1 { font-size: 24px; }

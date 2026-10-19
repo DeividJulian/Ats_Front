@@ -2,17 +2,20 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   ArrowRight,
+  Briefcase,
   Building2,
+  ChartColumn,
+  Check,
+  CloudOff,
+  FileText,
   GraduationCap,
-  Rocket,
-  Scale,
+  MessageCircle,
   Search,
+  SearchX,
+  ShieldCheck,
   Sparkles,
   Target,
-  Timer,
-  WifiOff,
-  BrainCircuit,
-  SearchX,
+  User,
 } from 'lucide-angular';
 import { forkJoin } from 'rxjs';
 
@@ -22,19 +25,21 @@ import { PublicService } from '../../core/services/api.services';
 import { errorMessage } from '../../core/utils/http-error';
 import { normalize } from '../../core/workers/cv-analysis.logic';
 import { PublicHeader } from '../../layout/public-header';
+import { AgoPipe } from '../../shared/ago.pipe';
 import { Icon } from '../../shared/icon';
 import { LabelPipe } from '../../shared/label.pipe';
 
 /** Ranking shown in the hero, to explain the product at a glance. */
 export const SAMPLE_RANKING = [
-  { name: 'Camila O.', score: 92.9, classification: 'high', skills: ['python', 'fastapi', 'docker'] },
-  { name: 'Sebastián R.', score: 53.3, classification: 'medium', skills: ['django', 'git'] },
-  { name: 'Valentina C.', score: 29.1, classification: 'low', skills: ['java', 'sql'] },
+  { name: 'Laura Valentina Gómez', initials: 'LG', score: 88, tone: 'alto' },
+  { name: 'Andrés Felipe Rojas', initials: 'AR', score: 76, tone: 'alto' },
+  { name: 'María Camila Ortiz', initials: 'MO', score: 64, tone: 'medio' },
+  { name: 'Juan David Martínez', initials: 'JM', score: 41, tone: 'bajo' },
 ];
 
 @Component({
   selector: 'app-landing',
-  imports: [RouterLink, PublicHeader, LabelPipe, Icon],
+  imports: [RouterLink, PublicHeader, LabelPipe, AgoPipe, Icon],
   templateUrl: './landing.html',
   styleUrl: './landing.css',
 })
@@ -48,9 +53,10 @@ export class Landing implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly search = signal('');
   protected readonly sample = SAMPLE_RANKING;
+  protected readonly avatarTones = ['avatar', 'avatar avatar--b', 'avatar avatar--g', 'avatar avatar--a'];
   protected readonly i = {
-    ArrowRight, Building2, GraduationCap, Rocket, Scale, Search, Sparkles, Target, Timer,
-    WifiOff, BrainCircuit, SearchX,
+    ArrowRight, Briefcase, Building2, ChartColumn, Check, CloudOff, FileText, GraduationCap, MessageCircle,
+    Search, SearchX, ShieldCheck, Sparkles, Target, User,
   };
 
   /** Jobs whose title, description or skills contain the search text (accents ignored). */

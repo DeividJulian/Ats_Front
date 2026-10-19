@@ -1,176 +1,202 @@
 <app-public-header />
 
-<section class="hero">
-  <div class="hero-inner">
-    <div class="hero-copy">
-      <span class="pill"><app-icon [icon]="i.Sparkles" [size]="14" /> Selección de personal con inteligencia artificial</span>
-      <h1>Encuentra al candidato ideal <span class="highlight">en minutos</span>, no en semanas.</h1>
-      <p class="lead">
-        Publica una vacante y el sistema lee las hojas de vida, detecta habilidades y ordena a los candidatos por
-        ajuste al cargo, explicando cada puntaje. Sin sesgos: nunca usa nombre, edad ni género.
+<main>
+  <section class="container hero">
+    <div class="stack stack--lg">
+      <span class="chip chip--peach" style="align-self: flex-start">Para pymes colombianas</span>
+      <h1 class="t-display">Recibe hojas de vida y encuentra a la persona indicada, sin leerlas todas</h1>
+      <p class="t-lead">
+        Publica tu vacante y Portal ATS ordena a los candidatos con un puntaje de 0 a 100 según habilidades, experiencia,
+        educación y qué tanto se parece su perfil a lo que buscas.
       </p>
 
       @if (auth.isLoggedIn()) {
-        <div class="cta">
-          <a class="btn primary large" [routerLink]="home()">Ir a mi panel <app-icon [icon]="i.ArrowRight" [size]="18" /></a>
+        <div class="row" style="gap: 12px">
+          <a class="btn btn--primary btn--lg" [routerLink]="home()">Ir a mi panel <app-icon [icon]="i.ArrowRight" [size]="18" /></a>
         </div>
       } @else {
-        <div class="paths">
-          <a class="path company" routerLink="/login">
-            <span class="path-icon"><app-icon [icon]="i.Building2" [size]="22" /></span>
-            <span>
-              <strong>Soy empresa</strong>
-              <small>Entra y ordena candidatos con IA</small>
-            </span>
-            <app-icon class="arrow" [icon]="i.ArrowRight" [size]="18" />
+        <div class="grid-2 paths">
+          <a class="choice" routerLink="/registro">
+            <span class="choice__icon"><app-icon [icon]="i.Building2" [size]="20" /></span>
+            <span><span class="t-strong" style="display: block">Quiero contratar</span><span class="t-small t-muted">Publica vacantes y revisa el ranking</span></span>
           </a>
-          <a class="path seeker" routerLink="/registro">
-            <span class="path-icon"><app-icon [icon]="i.Rocket" [size]="22" /></span>
-            <span>
-              <strong>Busco empleo</strong>
-              <small>Crea tu cuenta gratis y postúlate</small>
-            </span>
-            <app-icon class="arrow" [icon]="i.ArrowRight" [size]="18" />
+          <a class="choice" routerLink="/registro">
+            <span class="choice__icon"><app-icon [icon]="i.User" [size]="20" /></span>
+            <span><span class="t-strong" style="display: block">Busco empleo</span><span class="t-small t-muted">Crea tu cuenta gratis y postúlate</span></span>
           </a>
         </div>
-        <p class="demo-hint">¿Solo quieres mirar? En <a routerLink="/login">Iniciar sesión</a> hay cuentas de prueba con un clic.</p>
+        <p class="t-small t-muted">¿Solo quieres mirar? En <a routerLink="/login">Iniciar sesión</a> hay cuentas de prueba con un clic.</p>
       }
+
+      <div class="meta">
+        <span><app-icon [icon]="i.Check" [size]="16" />Sube PDF o pega el texto</span>
+        <span><app-icon [icon]="i.Check" [size]="16" />Puntaje explicado</span>
+        <span><app-icon [icon]="i.Check" [size]="16" />Todo en español</span>
+      </div>
 
       @if (summary(); as s) {
         <div class="numbers">
-          <div><strong>{{ s.open_jobs }}</strong><span>vacantes abiertas</span></div>
-          <div><strong>{{ s.candidates }}</strong><span>candidatos</span></div>
-          <div><strong>{{ s.hires }}</strong><span>contrataciones</span></div>
+          <div><span class="kpi__value">{{ s.open_jobs }}</span><span class="kpi__label">vacantes abiertas</span></div>
+          <div><span class="kpi__value">{{ s.candidates }}</span><span class="kpi__label">candidatos</span></div>
+          <div><span class="kpi__value">{{ s.hires }}</span><span class="kpi__label">contrataciones</span></div>
         </div>
       }
     </div>
 
-    <div class="hero-visual" aria-hidden="true">
-      <div class="mock">
-        <div class="mock-head">
-          <span class="badge high">● Abierta</span>
-          <strong>Desarrollador Backend Python</strong>
-          <span class="small subtle">Ranking de compatibilidad</span>
-        </div>
+    <div class="card card--lg stack hero-card" aria-label="Ejemplo de ranking">
+      <div class="row row--between">
+        <div><p class="t-label">Ranking</p><p class="t-h3">Desarrollador backend · Medellín</p></div>
+        <span class="badge badge--dot badge--abierta">Abierta</span>
+      </div>
+      <div class="list">
         @for (c of sample; track c.name; let n = $index) {
-          <div class="mock-row" [style.animation-delay.ms]="n * 140">
-            <span class="avatar small" [class]="'c' + (n + 1)">{{ c.name.slice(0, 1) }}{{ c.name.split(' ')[1]?.slice(0, 1) }}</span>
-            <div class="who">
-              <strong>{{ c.name }}</strong>
-              <div class="chips">
-                @for (s of c.skills; track s) { <span class="chip good">✓ {{ s }}</span> }
-              </div>
+          <div class="list__item">
+            <span class="avatar" [class]="avatarTones[n % avatarTones.length]">{{ c.initials }}</span>
+            <div class="list__main">
+              <div class="list__title">{{ c.name }}</div>
+              <div class="score score--sm" [class]="'score--' + c.tone"><div class="score__track"><div class="score__fill" [style.width.%]="c.score"></div></div></div>
             </div>
-            <span class="mock-score" [class]="c.classification">{{ c.score }}</span>
+            <span class="score-pill" [class]="'score-pill--' + c.tone">{{ c.score }}</span>
           </div>
         }
-        <div class="mock-foot">
-          <span class="chip ai"><app-icon [icon]="i.Sparkles" [size]="13" /> Se infiere SQL a partir de PostgreSQL</span>
-        </div>
+      </div>
+      <div class="card card--ia card--tight row row--nowrap" style="align-items: flex-start">
+        <span class="ia-mark"><app-icon [icon]="i.Sparkles" [size]="18" /></span>
+        <p class="t-small"><span class="t-strong t-ia">IA asesora:</span> Laura domina FastAPI y Docker. Pregúntale cómo diseñó sus pruebas automáticas.</p>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="section" id="como-funciona">
-  <div class="section-head">
-    <span class="eyebrow">Cómo funciona</span>
-    <h2>Tres pasos y tienes tu lista corta</h2>
-  </div>
-  <div class="steps">
-    <div class="step card">
-      <span class="num">1</span>
-      <h3>Publica la vacante</h3>
-      <p>Escribe el cargo y los requisitos. El sistema deduce las habilidades, o la IA redacta la oferta por ti.</p>
+  <section class="section band" id="como-funciona">
+    <div class="container">
+      <div class="section__head">
+        <span class="eyebrow">Cómo funciona el ranking</span>
+        <h2 class="t-h1">Un puntaje que puedes entender y explicar</h2>
+        <p class="t-lead">Nuestro motor de lenguaje lee cada hoja de vida y la compara con tu vacante en cuatro frentes. Siempre ves el desglose, nunca solo un número.</p>
+      </div>
+      <div class="grid-4">
+        <div class="card card--flat stack stack--sm">
+          <span class="kpi__icon"><app-icon [icon]="i.Target" [size]="20" /></span>
+          <h3 class="t-h3">Habilidades</h3>
+          <p class="t-muted t-small">Qué herramientas y conocimientos de la vacante aparecen en la hoja de vida: Siigo, Excel, Python…</p>
+        </div>
+        <div class="card card--flat stack stack--sm">
+          <span class="kpi__icon"><app-icon [icon]="i.Briefcase" [size]="20" /></span>
+          <h3 class="t-h3">Experiencia</h3>
+          <p class="t-muted t-small">Años en cargos similares frente a los que pediste.</p>
+        </div>
+        <div class="card card--flat stack stack--sm">
+          <span class="kpi__icon"><app-icon [icon]="i.GraduationCap" [size]="20" /></span>
+          <h3 class="t-h3">Educación</h3>
+          <p class="t-muted t-small">Nivel de estudios: técnico, tecnólogo, profesional o posgrado.</p>
+        </div>
+        <div class="card card--flat stack stack--sm">
+          <span class="kpi__icon"><app-icon [icon]="i.FileText" [size]="20" /></span>
+          <h3 class="t-h3">Similitud de texto</h3>
+          <p class="t-muted t-small">Qué tanto se parece el perfil completo a la descripción del cargo.</p>
+        </div>
+      </div>
+      <div class="grid-3" style="margin-top: 40px">
+        <div class="row row--nowrap row--top"><span class="step-card__num">1</span><div><h3 class="t-h3">Publica</h3><p class="t-muted t-small">Escribe la vacante o pídele a la IA un borrador.</p></div></div>
+        <div class="row row--nowrap row--top"><span class="step-card__num">2</span><div><h3 class="t-h3">Recibe</h3><p class="t-muted t-small">Los candidatos se postulan o tú subes sus hojas de vida en bloque.</p></div></div>
+        <div class="row row--nowrap row--top"><span class="step-card__num">3</span><div><h3 class="t-h3">Decide</h3><p class="t-muted t-small">Compara el ranking, lee el porqué y usa la guía de entrevista.</p></div></div>
+      </div>
     </div>
-    <div class="step card">
-      <span class="num">2</span>
-      <h3>Recibe hojas de vida</h3>
-      <p>Los candidatos se postulan solos o subes sus PDF: se detectan nombre, correo, experiencia y habilidades.</p>
-    </div>
-    <div class="step card">
-      <span class="num">3</span>
-      <h3>Decide con datos</h3>
-      <p>Ranking explicable, candidatos sugeridos, guía de entrevista y el embudo completo del proceso.</p>
-    </div>
-  </div>
+  </section>
 
-  <div class="features">
-    <div class="feature"><span class="icon-tile"><app-icon [icon]="i.Target" /></span><div><strong>Puntaje explicable</strong><p>Cada número dice qué cumple y qué le falta al candidato.</p></div></div>
-    <div class="feature"><span class="icon-tile blue"><app-icon [icon]="i.Scale" /></span><div><strong>Evaluación anónima</strong><p>Oculta nombres y correos para decidir solo por mérito.</p></div></div>
-    <div class="feature"><span class="icon-tile ai"><app-icon [icon]="i.BrainCircuit" /></span><div><strong>IA que asesora</strong><p>Resúmenes, brechas y preguntas de entrevista, sin cambiar el puntaje.</p></div></div>
-    <div class="feature"><span class="icon-tile green"><app-icon [icon]="i.WifiOff" /></span><div><strong>Funciona sin conexión</strong><p>Consulta los últimos datos aunque se caiga el internet.</p></div></div>
-  </div>
-</section>
-
-<section class="section" id="vacantes">
-  <div class="section-head row">
-    <div>
-      <span class="eyebrow">Bolsa de empleo</span>
-      <h2>Vacantes abiertas</h2>
+  <section class="section" id="ia">
+    <div class="container grid-2" style="align-items: center; gap: 48px">
+      <div class="stack">
+        <span class="badge badge--ia" style="align-self: flex-start"><app-icon [icon]="i.Sparkles" [size]="14" />Opcional</span>
+        <h2 class="t-h1">Una IA que aconseja, no que decide</h2>
+        <p class="t-lead">Si la activas, te ayuda a redactar vacantes, extraer perfiles y preparar entrevistas. El puntaje lo calcula siempre el sistema.</p>
+      </div>
+      <div class="stack">
+        <div class="alert alert--ia"><app-icon [icon]="i.ShieldCheck" [size]="20" /><div class="alert__body"><div class="alert__title">Datos personales protegidos</div>La IA nunca recibe nombre, correo ni teléfono del candidato.</div></div>
+        <div class="alert alert--ia"><app-icon [icon]="i.ChartColumn" [size]="20" /><div class="alert__body"><div class="alert__title">No cambia el puntaje</div>Sus recomendaciones aparecen aparte, marcadas en violeta.</div></div>
+        <div class="alert alert--ia"><app-icon [icon]="i.MessageCircle" [size]="20" /><div class="alert__body"><div class="alert__title">Preguntas a la medida</div>Fortalezas, brechas y preguntas para cada entrevista.</div></div>
+      </div>
     </div>
-    <span class="spacer"></span>
-    <div class="search-box">
-      <app-icon [icon]="i.Search" />
-      <input class="search" type="search" placeholder="Buscar por cargo o habilidad…" aria-label="Buscar vacantes" (input)="onSearch($event)" />
-    </div>
-  </div>
+  </section>
 
-  @if (loading()) {
-    <div class="job-grid">
-      @for (n of [1, 2, 3]; track n) {
-        <div class="card stack"><div class="skeleton" style="width: 60%"></div><div class="skeleton"></div><div class="skeleton" style="width: 80%"></div></div>
+  <section class="section band" id="vacantes">
+    <div class="container">
+      <div class="row row--between" style="align-items: flex-end; margin-bottom: 28px">
+        <div class="section__head" style="margin-bottom: 0">
+          <span class="eyebrow">Vacantes abiertas</span>
+          <h2 class="t-h1">Empleos publicados</h2>
+        </div>
+        <span class="control control--icon job-search">
+          <app-icon [icon]="i.Search" [size]="20" />
+          <input class="input search" type="search" placeholder="Buscar por cargo o habilidad" aria-label="Buscar vacantes" (input)="onSearch($event)" />
+        </span>
+      </div>
+
+      @if (loading()) {
+        <div class="grid-3">
+          @for (n of [1, 2, 3]; track n) {
+            <div class="card stack"><span class="skeleton sk-title"></span><span class="skeleton sk-line"></span><span class="skeleton sk-line" style="width: 70%"></span></div>
+          }
+        </div>
+      } @else if (error()) {
+        <div class="card empty">
+          <span class="empty__icon empty__icon--danger"><app-icon [icon]="i.CloudOff" [size]="32" /></span>
+          <p class="empty__title">No pudimos cargar las vacantes</p>
+          <p class="empty__text">{{ error() }}</p>
+          <button type="button" class="btn btn--secondary" (click)="load()">Reintentar</button>
+        </div>
+      } @else if (visibleJobs().length === 0) {
+        <div class="card empty">
+          <span class="empty__icon"><app-icon [icon]="i.SearchX" [size]="32" /></span>
+          <p class="empty__title">{{ search() ? 'Ninguna vacante coincide con tu búsqueda' : 'Por ahora no hay vacantes abiertas' }}</p>
+          <p class="empty__text">Prueba con otro cargo o habilidad, o vuelve en unos días.</p>
+        </div>
+      } @else {
+        <div class="grid-3">
+          @for (job of visibleJobs(); track job.id) {
+            <a class="card card--link stack stack--sm job" [routerLink]="['/empleos', job.id]">
+              <div class="row row--between"><span class="badge badge--dot badge--abierta">Abierta</span><span class="t-xs t-muted">{{ job.created_at | ago }}</span></div>
+              <h3 class="t-h3">{{ job.title }}</h3>
+              <p class="t-small t-muted clamp">{{ job.description }}</p>
+              <div class="meta">
+                <span><app-icon [icon]="i.Briefcase" [size]="16" />{{ job.min_experience_years ? job.min_experience_years + ' años de experiencia' : 'Sin experiencia mínima' }}</span>
+                @if (job.min_education_level) {
+                  <span><app-icon [icon]="i.GraduationCap" [size]="16" />{{ job.min_education_level | label: 'education' }}</span>
+                }
+              </div>
+              <div class="chips">
+                @for (skill of job.required_skills.slice(0, 4); track skill) { <span class="chip">{{ skill }}</span> }
+                @if (job.required_skills.length > 4) { <span class="chip chip--more">+{{ job.required_skills.length - 4 }}</span> }
+              </div>
+            </a>
+          }
+        </div>
       }
     </div>
-  } @else if (error()) {
-    <div class="empty">
-      <strong>No pudimos cargar las vacantes</strong>
-      <span>{{ error() }}</span>
-      <button type="button" class="btn small" (click)="load()">Reintentar</button>
-    </div>
-  } @else if (visibleJobs().length === 0) {
-    <div class="empty">
-      <span class="icon-tile"><app-icon [icon]="i.SearchX" [size]="24" /></span>
-      <strong>{{ search() ? 'Ninguna vacante coincide con tu búsqueda' : 'Por ahora no hay vacantes abiertas' }}</strong>
-    </div>
-  } @else {
-    <div class="job-grid">
-      @for (job of visibleJobs(); track job.id) {
-        <a class="card hover job" [routerLink]="['/empleos', job.id]">
-          <div class="row"><span class="badge high">● Abierta</span></div>
-          <h3>{{ job.title }}</h3>
-          <p class="subtle small clamp">{{ job.description }}</p>
-          <div class="chips">
-            @for (skill of job.required_skills.slice(0, 5); track skill) {
-              <span class="chip outline">{{ skill }}</span>
-            }
-            @if (job.required_skills.length > 5) {
-              <span class="chip outline">+{{ job.required_skills.length - 5 }}</span>
-            }
-          </div>
-          <div class="meta small subtle">
-            <span><app-icon [icon]="i.Timer" [size]="14" /> {{ job.min_experience_years ? job.min_experience_years + ' años de experiencia' : 'Sin experiencia mínima' }}</span>
-            @if (job.min_education_level) {
-              <span><app-icon [icon]="i.GraduationCap" [size]="14" /> {{ job.min_education_level | label: 'education' }}</span>
-            }
-          </div>
-          <span class="more">Ver vacante <app-icon [icon]="i.ArrowRight" [size]="15" /></span>
-        </a>
-      }
-    </div>
-  }
-</section>
+  </section>
 
-<section class="final-cta">
-  <h2>¿Listo para contratar mejor?</h2>
-  <p>Crea tu cuenta en segundos o prueba el sistema con las cuentas de demostración.</p>
-  <div class="row center">
-    <a class="btn primary large" routerLink="/registro">Crear cuenta gratis</a>
-    <a class="btn outline large" routerLink="/login">Iniciar sesión</a>
+  <section class="section">
+    <div class="container grid-2">
+      <div class="card card--peach card--lg stack">
+        <span class="kpi__icon" style="background: var(--c-surface)"><app-icon [icon]="i.Building2" [size]="20" /></span>
+        <h2 class="t-h2">¿Tienes una empresa?</h2>
+        <p style="color: var(--c-on-peach)">Entra con tu cuenta de reclutador, publica la primera vacante y revisa el ranking hoy mismo.</p>
+        <a class="btn btn--primary" [routerLink]="auth.isLoggedIn() ? home() : '/login'" style="align-self: flex-start">{{ auth.isLoggedIn() ? 'Ir a mi panel' : 'Entrar como empresa' }}</a>
+      </div>
+      <div class="card card--lg stack">
+        <span class="kpi__icon"><app-icon [icon]="i.User" [size]="20" /></span>
+        <h2 class="t-h2">¿Buscas empleo?</h2>
+        <p class="t-muted">Sube tu hoja de vida una vez, postúlate con un clic y mira en qué va cada proceso.</p>
+        <a class="btn btn--secondary" routerLink="/registro" style="align-self: flex-start">Crear cuenta de candidato</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container row row--between">
+    <span class="brand"><span class="brand__mark"><app-icon [icon]="i.ChartColumn" [size]="20" [stroke]="2.25" /></span>Portal ATS</span>
+    <span class="t-small t-muted">Proyecto de Programación Orientada a la Web · Universidad Cooperativa de Colombia</span>
+    <span class="t-small t-muted">Hecho en Colombia</span>
   </div>
-</section>
-
-<footer class="footer">
-  <span><strong>Portal ATS</strong> · Selección de personal para pymes</span>
-  <span class="subtle">Proyecto de Programación Orientada a la Web · Universidad Cooperativa de Colombia</span>
 </footer>

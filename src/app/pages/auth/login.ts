@@ -1,21 +1,23 @@
 import { Component, inject, input, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { Building2, ChartColumn, CircleAlert, Clock, Eye, EyeOff, FileText, ListOrdered, Lock, Mail, ShieldCheck, User } from 'lucide-angular';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { errorMessage } from '../../core/utils/http-error';
+import { Icon } from '../../shared/icon';
 import { afterLoginUrl } from './auth-redirect';
 
 /** Demo accounts created by POST /seed on the backend. */
 export const DEMO_ACCOUNTS = [
-  { label: 'Reclutador', hint: 'Vacantes, ranking e IA', icon: '🏢', email: 'reclutador@demo.com', password: 'Demo1234' },
-  { label: 'Candidata', hint: 'Postulaciones y perfil', icon: '🙋‍♀️', email: 'camila.ortega@example.com', password: 'Demo1234' },
+  { label: 'empresa', role: 'recruiter', email: 'reclutador@demo.com', password: 'Demo1234' },
+  { label: 'candidata', role: 'candidate', email: 'camila.ortega@example.com', password: 'Demo1234' },
 ];
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, Icon],
   templateUrl: './login.html',
   styleUrl: './auth.css',
 })
@@ -29,6 +31,7 @@ export class Login {
   private readonly toasts = inject(ToastService);
 
   protected readonly demoAccounts = DEMO_ACCOUNTS;
+  protected readonly i = { Building2, ChartColumn, CircleAlert, Clock, Eye, EyeOff, FileText, ListOrdered, Lock, Mail, ShieldCheck, User };
   protected readonly sending = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly showPassword = signal(false);
@@ -37,6 +40,11 @@ export class Login {
     email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required],
   });
+
+  protected bad(name: 'email' | 'password'): boolean {
+    const control = this.form.controls[name];
+    return control.touched && control.invalid;
+  }
 
   protected submit(): void {
     if (this.form.invalid) {
