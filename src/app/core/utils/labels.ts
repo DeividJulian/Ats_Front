@@ -69,6 +69,9 @@ export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   motivation: 'Motivación',
 };
 
+/** Name of the AI provider reported by GET /ai/status. */
+export const AI_PROVIDER_LABELS: Record<string, string> = { gemini: 'Gemini', groq: 'Groq', anthropic: 'Claude' };
+
 function lookup<K extends string>(labels: Record<K, string>, code: string | null | undefined, fallback = '—'): string {
   if (!code) return fallback;
   return (labels as Record<string, string>)[code] ?? code;
@@ -83,4 +86,5 @@ export const roleLabel = (code: string | null | undefined) => lookup(ROLE_LABELS
 export const areaLabel = (code: string | null | undefined) => lookup(AREA_LABELS, code);
 export const breakdownLabel = (code: string) => BREAKDOWN_LABELS[code] ?? code;
 export const recommendationLabel = (code: string | null | undefined) => lookup(RECOMMENDATION_LABELS, code);
+export const aiProviderLabel = (code: string | null | undefined) => (code && AI_PROVIDER_LABELS[code]) || 'la IA';
 export const questionTypeLabel = (code: string | null | undefined) => lookup(QUESTION_TYPE_LABELS, code);

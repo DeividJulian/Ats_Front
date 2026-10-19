@@ -28,7 +28,7 @@ import { AiService, CandidateService } from '../../../core/services/api.services
 import { ToastService } from '../../../core/services/toast.service';
 import { areaOf } from '../../../core/utils/areas';
 import { errorMessage, initials } from '../../../core/utils/http-error';
-import { AREA_LABELS, EDUCATION_LEVELS } from '../../../core/utils/labels';
+import { AREA_LABELS, EDUCATION_LEVELS, aiProviderLabel } from '../../../core/utils/labels';
 import { canonicalizeSkills, normalize } from '../../../core/workers/cv-analysis.logic';
 import { reloadOnRemoteChanges } from '../../../core/workers/tab-sync.service';
 import { Icon } from '../../../shared/icon';
@@ -157,7 +157,7 @@ export class Candidates {
     });
   }
 
-  /** Same, but Claude reads the resume (only when the server has the API key). */
+  /** Same, but the language model reads the resume (only when the server has an AI key). */
   protected extractWithAi(): void {
     const text = this.form.controls.resume_text.value.trim();
     if (text.length < 20) {
@@ -171,7 +171,7 @@ export class Candidates {
         this.form.patchValue({ experience_years: p.experience_years || '', education_level: p.education_level ?? '' });
         this.skills.set(canonicalizeSkills([...this.skills(), ...p.skills]));
         this.aiSummary.set(p.summary || null);
-        this.toasts.ok('Claude completó el perfil');
+        this.toasts.ok(`${aiProviderLabel(this.aiStatus()?.provider)} completó el perfil`);
       },
       error: (e) => {
         this.extracting.set(null);

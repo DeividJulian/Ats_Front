@@ -203,7 +203,7 @@ export class StatsService {
   }
 }
 
-/** Features backed by the Claude language model (optional on the server). */
+/** Features backed by a language model (Gemini, Groq or Claude, chosen on the server; optional). */
 @Injectable({ providedIn: 'root' })
 export class AiService {
   private readonly http = inject(HttpClient);

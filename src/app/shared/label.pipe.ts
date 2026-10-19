@@ -1,6 +1,7 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
 import {
+  aiProviderLabel,
   areaLabel,
   breakdownLabel,
   classificationLabel,
@@ -21,7 +22,8 @@ export type LabelKind =
   | 'area'
   | 'breakdown'
   | 'recommendation'
-  | 'questionType';
+  | 'questionType'
+  | 'aiProvider';
 
 const LABELS: Record<LabelKind, (code: string) => string> = {
   status: statusLabel,
@@ -33,6 +35,7 @@ const LABELS: Record<LabelKind, (code: string) => string> = {
   breakdown: breakdownLabel,
   recommendation: recommendationLabel,
   questionType: questionTypeLabel,
+  aiProvider: aiProviderLabel,
 };
 
 /** Shows an API code in Spanish: {{ 'shortlisted' | label: 'status' }} -> "Preseleccionado". */

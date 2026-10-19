@@ -97,7 +97,7 @@
             <div class="row">
               <span class="icon-tile ai"><app-icon [icon]="i.BrainCircuit" [size]="20" /></span>
               <div class="stack" style="gap: 0; flex: 1">
-                <strong>Evaluación del asistente Claude</strong>
+                <strong>Evaluación de {{ aiStatus()?.provider | label: 'aiProvider' }}</strong>
                 <span class="small subtle">El puntaje del sistema ({{ ev.system_score }}) no cambia</span>
               </div>
             </div>

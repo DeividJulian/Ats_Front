@@ -2,6 +2,8 @@ import { EducationLevel } from './job';
 
 export interface AiStatus {
   configured: boolean;
+  /** gemini, groq or anthropic */
+  provider: string;
   model: string;
 }
 

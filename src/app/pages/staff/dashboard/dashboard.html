@@ -8,7 +8,7 @@
       <div class="ai-strip" [class.off]="!ai.configured">
         <span class="live"></span>
         <app-icon [icon]="i.Sparkles" [size]="16" />
-        <strong>{{ ai.configured ? 'IA Claude activa' : 'IA Claude sin configurar' }}</strong>
+        <strong>{{ ai.configured ? 'IA ' + (ai.provider | label: 'aiProvider') + ' activa' : 'IA ' + (ai.provider | label: 'aiProvider') + ' sin configurar' }}</strong>
         <span class="spacer"></span>
         <span class="model">{{ ai.configured ? ai.model : 'Ranking propio activo' }}</span>
       </div>

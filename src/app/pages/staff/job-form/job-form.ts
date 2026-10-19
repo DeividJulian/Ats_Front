@@ -3,16 +3,17 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
-import { EducationLevel, JobInput } from '../../../core/models';
+import { AiStatus, EducationLevel, JobInput } from '../../../core/models';
 import { AiService, JobService } from '../../../core/services/api.services';
 import { ToastService } from '../../../core/services/toast.service';
 import { errorMessage, splitList } from '../../../core/utils/http-error';
 import { EDUCATION_LEVELS } from '../../../core/utils/labels';
 import { canonicalizeSkills, extractSkills } from '../../../core/workers/cv-analysis.logic';
+import { LabelPipe } from '../../../shared/label.pipe';
 
 @Component({
   selector: 'app-job-form',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, LabelPipe],
   templateUrl: './job-form.html',
   styles: `
     .layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; align-items: start; }
@@ -32,7 +33,7 @@ export class JobForm implements OnInit {
   protected readonly levels = EDUCATION_LEVELS;
   protected readonly saving = signal(false);
   protected readonly loading = signal(false);
-  protected readonly aiConfigured = signal(false);
+  protected readonly aiStatus = signal<AiStatus | null>(null);
   protected readonly drafting = signal(false);
   protected readonly aiNotes = signal('');
 
@@ -57,7 +58,7 @@ export class JobForm implements OnInit {
   });
 
   ngOnInit(): void {
-    this.ai.status().subscribe({ next: (s) => this.aiConfigured.set(s.configured), error: () => this.aiConfigured.set(false) });
+    this.ai.status().subscribe({ next: (s) => this.aiStatus.set(s), error: () => this.aiStatus.set(null) });
     const id = this.id();
     if (!id) return;
     this.loading.set(true);

@@ -38,7 +38,7 @@
               <strong>Asistente de perfiles</strong>
               <span class="small">Analizador semántico para pymes</span>
             </div>
-            @if (aiStatus()?.configured) { <span class="badge">Claude</span> }
+            @if (aiStatus()?.configured) { <span class="badge">{{ aiStatus()?.provider | label: 'aiProvider' }}</span> }
           </div>
           <p class="small">Extrae al instante nombre, contacto, habilidades, años de experiencia y nivel educativo. Ahorra minutos en cada postulación.</p>
           <div class="row">
@@ -47,7 +47,7 @@
             </button>
             @if (aiStatus()?.configured) {
               <button type="button" class="btn outline" [disabled]="extracting() !== null" (click)="extractWithAi()">
-                @if (extracting() === 'ai') { <span class="spinner"></span> Claude está leyendo… } @else { Refinar con Claude }
+                @if (extracting() === 'ai') { <span class="spinner"></span> {{ aiStatus()?.provider | label: 'aiProvider' }} está leyendo… } @else { Refinar con {{ aiStatus()?.provider | label: 'aiProvider' }} }
               </button>
             }
           </div>

@@ -1,7 +1,7 @@
 import { Component, inject, input, OnInit, signal } from '@angular/core';
 import { KeyValuePipe } from '@angular/common';
 
-import { AiEvaluation, Application, InterviewGuide } from '../../../core/models';
+import { AiEvaluation, AiStatus, Application, InterviewGuide } from '../../../core/models';
 import { AiService, ApplicationService } from '../../../core/services/api.services';
 import { errorMessage } from '../../../core/utils/http-error';
 import { LabelPipe } from '../../../shared/label.pipe';
@@ -74,7 +74,7 @@ import { ScoreBar } from '../../../shared/score-bar';
             </div>
           } @else {
             <div class="stack">
-              <p class="subtle small">Claude lee la vacante y la hoja de vida (sin nombre ni correo) y redacta un análisis. Puede tardar unos segundos.</p>
+              <p class="subtle small">{{ aiStatus()?.provider | label: 'aiProvider' }} lee la vacante y la hoja de vida (sin nombre, correo ni teléfono) y redacta un análisis. Puede tardar unos segundos.</p>
               @if (aiError()) { <div class="notice error">{{ aiError() }}</div> }
               <button type="button" class="btn ai" [disabled]="evaluating()" (click)="evaluate(app.id)">
                 @if (evaluating()) { <span class="spinner"></span> Analizando… } @else { ✨ Evaluar con IA }
@@ -107,8 +107,10 @@ export class ApplicationReview implements OnInit {
   protected readonly evaluating = signal(false);
   protected readonly aiError = signal<string | null>(null);
   protected readonly tab = signal<'guide' | 'ai'>('guide');
+  protected readonly aiStatus = signal<AiStatus | null>(null);
 
   ngOnInit(): void {
+    this.ai.status().subscribe({ next: (s) => this.aiStatus.set(s), error: () => this.aiStatus.set(null) });
     const id = this.applicationId();
     this.applications.get(id).subscribe((a) => this.application.set(a));
     this.applications.interviewGuide(id).subscribe({

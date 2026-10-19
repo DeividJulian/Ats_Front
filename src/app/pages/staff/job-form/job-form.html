@@ -69,14 +69,14 @@
 
         <div class="card stack notice ai">
           <h3>🧠 Redactar con IA</h3>
-          @if (aiConfigured()) {
-            <p class="small subtle">Escribe el cargo y unas notas; Claude propone la descripción, los requisitos y las habilidades.</p>
+          @if (aiStatus()?.configured) {
+            <p class="small subtle">Escribe el cargo y unas notas; {{ aiStatus()?.provider | label: 'aiProvider' }} propone la descripción, los requisitos y las habilidades.</p>
             <textarea rows="3" placeholder="Notas: pyme comercial, manejo de facturación electrónica, trabajo presencial…" [value]="aiNotes()" (input)="aiNotes.set($any($event.target).value)"></textarea>
             <button type="button" class="btn ai" [disabled]="drafting()" (click)="draftWithAi()">
               @if (drafting()) { <span class="spinner"></span> Redactando… } @else { ✨ Generar borrador }
             </button>
           } @else {
-            <p class="small subtle">Disponible cuando el servidor tenga configurada la clave de Claude (ANTHROPIC_API_KEY).</p>
+            <p class="small subtle">Disponible cuando el servidor tenga configurada una clave de IA (AI_API_KEY).</p>
           }
         </div>
       </div>
