@@ -13,6 +13,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
+  <script>
+    // Applies the saved theme before Angular starts, so the page does not flash white
+    try {
+      var t = localStorage.getItem('ats.theme');
+      if (t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('is-dark');
+    } catch (e) {}
+  </script>
   <app-root></app-root>
 </body>
 </html>

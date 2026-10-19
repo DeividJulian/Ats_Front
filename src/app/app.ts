@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
+import { ThemeService } from './core/services/theme.service';
 import { ConnectionService } from './core/workers/connection.service';
 import { TabSyncService } from './core/workers/tab-sync.service';
 import { ConnectionStatus } from './shared/connection-status';
@@ -20,5 +21,6 @@ export class App {
   constructor() {
     inject(ConnectionService);
     inject(TabSyncService);
+    inject(ThemeService);
   }
 }

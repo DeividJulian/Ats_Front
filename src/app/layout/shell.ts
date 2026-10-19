@@ -1,25 +1,33 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import {
   Briefcase,
-  ChevronDown,
+  ChartColumn,
   ClipboardList,
+  Files,
   House,
-  LayoutGrid,
+  LayoutDashboard,
+  ListOrdered,
   LogOut,
+  Menu,
+  Moon,
+  Plus,
   ShieldCheck,
-  Trophy,
+  Sun,
   User,
-  UserSearch,
-  Zap,
+  Users,
 } from 'lucide-angular';
 import type { LucideIconData } from 'lucide-angular';
 import { filter, map } from 'rxjs';
 
 import { AuthService } from '../core/auth/auth.service';
-import { Role } from '../core/models';
+import { AiStatus, Role } from '../core/models';
+import { AiService } from '../core/services/api.services';
+import { ThemeService } from '../core/services/theme.service';
 import { initials } from '../core/utils/http-error';
+import { aiProviderLabel } from '../core/utils/labels';
 import { Icon } from '../shared/icon';
 import { LabelPipe } from '../shared/label.pipe';
 
@@ -28,8 +36,10 @@ export interface NavItem {
   label: string;
   icon: LucideIconData;
   exact?: boolean;
-  /** Small tag over the icon in the bottom bar, as "Worker" */
-  tag?: string;
+  /** Shorter name for the phone bottom bar */
+  short?: string;
+  /** Entries under the "Administración" heading of the side menu */
+  admin?: boolean;
 }
 
 /** Menu of each role. */
@@ -38,18 +48,18 @@ export function navFor(role: Role | null): NavItem[] {
     return [
       { path: '/portal', label: 'Inicio', icon: House, exact: true },
       { path: '/portal/vacantes', label: 'Vacantes', icon: Briefcase },
-      { path: '/portal/postulaciones', label: 'Postulaciones', icon: ClipboardList },
-      { path: '/portal/perfil', label: 'Mi perfil', icon: User },
+      { path: '/portal/postulaciones', label: 'Mis postulaciones', short: 'Postulaciones', icon: ClipboardList },
+      { path: '/portal/perfil', label: 'Mi perfil', short: 'Perfil', icon: User },
     ];
   }
   const staff: NavItem[] = [
-    { path: '/app', label: 'Panel', icon: LayoutGrid, exact: true },
+    { path: '/app', label: 'Panel', icon: LayoutDashboard, exact: true },
     { path: '/app/vacantes', label: 'Vacantes', icon: Briefcase },
-    { path: '/app/ranking', label: 'Ranking', icon: Trophy },
-    { path: '/app/candidatos', label: 'Candidatos', icon: UserSearch },
-    { path: '/app/analisis', label: 'Análisis', icon: Zap, tag: 'Worker' },
+    { path: '/app/candidatos', label: 'Candidatos', icon: Users },
+    { path: '/app/ranking', label: 'Ranking', icon: ListOrdered },
+    { path: '/app/analisis', label: 'Análisis masivo', short: 'Análisis', icon: Files },
   ];
-  if (role === 'admin') staff.push({ path: '/app/usuarios', label: 'Usuarios', icon: ShieldCheck });
+  if (role === 'admin') staff.push({ path: '/app/usuarios', label: 'Usuarios', icon: ShieldCheck, admin: true });
   return staff;
 }
 
@@ -62,23 +72,32 @@ export function sectionFor(url: string, items: NavItem[]): string {
   return match?.label ?? '';
 }
 
-/** Frame of the private area: side menu on desktop, bottom bar on phones, user menu. */
+/** Frame of the private area: side menu (team) or top menu (candidates), and a bottom bar on phones. */
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, LabelPipe, Icon],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NgTemplateOutlet, LabelPipe, Icon],
   templateUrl: './shell.html',
   styleUrl: './shell.css',
 })
 export class Shell {
   protected readonly auth = inject(AuthService);
+  protected readonly theme = inject(ThemeService);
   private readonly router = inject(Router);
+  private readonly ai = inject(AiService);
 
-  protected readonly icons = { LogOut, ChevronDown, ShieldCheck };
+  protected readonly icons = { LogOut, Menu, Moon, Sun, Plus, ChartColumn };
+  protected readonly isCandidate = computed(() => this.auth.role() === 'candidate');
   protected readonly nav = computed(() => navFor(this.auth.role()));
-  /** On phones the bottom bar has room for five entries; the rest live in the user menu. */
-  protected readonly bottomNav = computed(() => this.nav().slice(0, 5));
+  protected readonly mainNav = computed(() => this.nav().filter((i) => !i.admin));
+  protected readonly adminNav = computed(() => this.nav().filter((i) => i.admin));
+  /** The bottom bar fits four entries; the team gets the rest under "Más". */
+  protected readonly bottomNav = computed(() => this.nav().slice(0, 4));
+  protected readonly moreNav = computed(() => this.nav().slice(4));
   protected readonly initials = computed(() => initials(this.auth.user()?.name));
   protected readonly menuOpen = signal(false);
+  protected readonly moreOpen = signal(false);
+  protected readonly aiStatus = signal<AiStatus | null>(null);
+  protected readonly aiLabel = computed(() => aiProviderLabel(this.aiStatus()?.provider));
 
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -90,7 +109,13 @@ export class Shell {
   protected readonly section = computed(() => sectionFor(this.url(), this.nav()));
 
   constructor() {
-    this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => this.menuOpen.set(false));
+    this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => {
+      this.menuOpen.set(false);
+      this.moreOpen.set(false);
+    });
+    if (!this.isCandidate()) {
+      this.ai.status().subscribe({ next: (s) => this.aiStatus.set(s), error: () => this.aiStatus.set(null) });
+    }
   }
 
   protected logout(): void {

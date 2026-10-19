@@ -1,80 +1,146 @@
-<div class="shell">
-  <aside class="sidebar">
-    <a class="brand" routerLink="/">
-      <span class="logo">A<i></i></span>
-      <span class="brand-text"><strong>Portal ATS</strong><span class="pill">PYME Colombia</span></span>
-    </a>
+<ng-template #brandMark>
+  <span class="brand__mark"><app-icon [icon]="icons.ChartColumn" [size]="20" [stroke]="2.25" /></span>
+</ng-template>
 
-    <nav aria-label="Menú principal">
-      @for (item of nav(); track item.path) {
-        <a [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: !!item.exact }">
-          <app-icon [icon]="item.icon" [size]="19" />
-          <span>{{ item.label }}</span>
-          @if (item.tag) { <span class="tag">{{ item.tag }}</span> }
-        </a>
-      }
-    </nav>
+<ng-template #themeButton>
+  <button type="button" class="btn btn--ghost btn--icon" (click)="theme.toggle()"
+          [attr.aria-label]="theme.theme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+          [title]="theme.theme() === 'dark' ? 'Modo claro' : 'Modo oscuro'">
+    <app-icon [icon]="theme.theme() === 'dark' ? icons.Sun : icons.Moon" [size]="20" />
+  </button>
+</ng-template>
 
-    <div class="user-card">
-      <span class="avatar">{{ initials() }}</span>
-      <div class="who">
-        <strong>{{ auth.user()?.name }}</strong>
-        <span class="small subtle">{{ auth.role() | label: 'role' }}</span>
-      </div>
-      <button type="button" class="btn ghost icon-only" title="Cerrar sesión" aria-label="Cerrar sesión" (click)="logout()">
-        <app-icon [icon]="icons.LogOut" />
-      </button>
-    </div>
-  </aside>
-
-  <div class="content">
-    <header class="topbar">
-      <a class="brand compact" routerLink="/">
-        <span class="logo">A<i></i></span>
-        <span class="brand-text">
-          <span class="row-tight"><strong>Portal ATS</strong><span class="pill">PYME Colombia</span></span>
-          <span class="section">{{ section() }}</span>
-        </span>
-      </a>
-      <span class="desktop-section">{{ section() }}</span>
-      <span class="spacer"></span>
-      <div class="user-menu">
-        <button type="button" class="avatar-btn" [attr.aria-expanded]="menuOpen()" aria-label="Menú de usuario" (click)="menuOpen.set(!menuOpen())">
-          <span class="avatar">{{ initials() }}</span>
-          <app-icon class="chevron" [icon]="icons.ChevronDown" [size]="16" />
-        </button>
-        @if (menuOpen()) {
-          <div class="menu" role="menu">
-            <div class="menu-head">
-              <strong>{{ auth.user()?.name }}</strong>
-              <span class="small subtle">{{ auth.user()?.email }}</span>
-              <span class="badge" [class]="auth.role()">{{ auth.role() | label: 'role' }}</span>
-            </div>
-            @if (auth.isAdmin()) {
-              <a role="menuitem" routerLink="/app/usuarios"><app-icon [icon]="icons.ShieldCheck" [size]="17" /> Usuarios y roles</a>
-            }
-            <button type="button" role="menuitem" (click)="logout()"><app-icon [icon]="icons.LogOut" [size]="17" /> Cerrar sesión</button>
-          </div>
+<ng-template #userMenu>
+  <div class="user-menu">
+    <button type="button" class="avatar-btn" [attr.aria-expanded]="menuOpen()" aria-label="Menú de usuario" (click)="menuOpen.set(!menuOpen())">
+      <span class="avatar avatar--sm">{{ initials() }}</span>
+      @if (isCandidate()) { <span class="t-strong t-small hide-m">{{ auth.user()?.name }}</span> }
+    </button>
+    @if (menuOpen()) {
+      <div class="menu" role="menu">
+        <div class="menu__head">
+          <strong>{{ auth.user()?.name }}</strong>
+          <span class="t-xs t-muted">{{ auth.user()?.email }}</span>
+        </div>
+        @if (auth.isAdmin()) {
+          <a role="menuitem" routerLink="/app/usuarios"><app-icon [icon]="adminNav()[0].icon" [size]="18" /> Usuarios y roles</a>
         }
+        <button type="button" role="menuitem" (click)="logout()"><app-icon [icon]="icons.LogOut" [size]="18" /> Cerrar sesión</button>
+      </div>
+    }
+  </div>
+</ng-template>
+
+@if (isCandidate()) {
+  <!-- Candidate portal: top menu -->
+  <div class="frame">
+    <header class="topnav">
+      <div class="container topnav__in">
+        <a class="brand" routerLink="/portal"><ng-container [ngTemplateOutlet]="brandMark" />Portal ATS</a>
+        <nav class="topnav__links" aria-label="Portal del candidato">
+          @for (item of nav(); track item.path) {
+            <a class="topnav__link" [routerLink]="item.path" routerLinkActive="is-active" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: !!item.exact }">
+              <app-icon [icon]="item.icon" [size]="18" />{{ item.label }}
+            </a>
+          }
+        </nav>
+        <span class="spacer"></span>
+        <ng-container [ngTemplateOutlet]="themeButton" />
+        <ng-container [ngTemplateOutlet]="userMenu" />
       </div>
     </header>
 
-    <main>
-      <router-outlet />
-    </main>
+    <main class="frame__main"><router-outlet /></main>
+
+    <nav class="bottomnav" aria-label="Menú principal">
+      @for (item of nav(); track item.path) {
+        <a [routerLink]="item.path" routerLinkActive="is-active" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: !!item.exact }">
+          <app-icon [icon]="item.icon" [size]="20" />{{ item.short ?? item.label }}
+        </a>
+      }
+    </nav>
+  </div>
+} @else {
+  <!-- Team panel: side menu -->
+  <div class="shell">
+    <aside class="sidebar" aria-label="Menú principal">
+      <a class="brand" routerLink="/app">
+        <ng-container [ngTemplateOutlet]="brandMark" />
+        <span>Portal ATS<small>{{ auth.role() | label: 'role' }}</small></span>
+      </a>
+      <span class="nav-label">General</span>
+      @for (item of mainNav(); track item.path) {
+        <a class="nav-link" [routerLink]="item.path" routerLinkActive="is-active" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: !!item.exact }">
+          <app-icon [icon]="item.icon" [size]="20" />{{ item.label }}
+        </a>
+      }
+      @if (adminNav().length) {
+        <span class="nav-label">Administración</span>
+        @for (item of adminNav(); track item.path) {
+          <a class="nav-link" [routerLink]="item.path" routerLinkActive="is-active" ariaCurrentWhenActive="page">
+            <app-icon [icon]="item.icon" [size]="20" />{{ item.label }}
+          </a>
+        }
+      }
+      <div class="sidebar__foot">
+        @if (aiStatus()?.configured) {
+          <span class="ia-status"><span class="ia-status__dot"></span>IA activa · {{ aiLabel() }}</span>
+        } @else {
+          <span class="ia-status is-off" title="Falta configurar AI_API_KEY en el servidor"><span class="ia-status__dot"></span>IA sin configurar</span>
+        }
+        <div class="user-chip">
+          <span class="avatar avatar--sm avatar--g">{{ initials() }}</span>
+          <div class="list__main">
+            <div class="user-chip__name">{{ auth.user()?.name }}</div>
+            <div class="t-xs t-muted">{{ auth.role() | label: 'role' }}</div>
+          </div>
+          <button type="button" class="btn btn--ghost btn--icon btn--sm" aria-label="Cerrar sesión" title="Cerrar sesión" (click)="logout()">
+            <app-icon [icon]="icons.LogOut" [size]="18" />
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="shell__main">
+      <header class="topbar">
+        <span class="t-h3">{{ section() }}</span>
+        <span class="spacer"></span>
+        <ng-container [ngTemplateOutlet]="themeButton" />
+        <a class="btn btn--primary" routerLink="/app/vacantes/nueva"><app-icon [icon]="icons.Plus" [size]="18" />Nueva vacante</a>
+      </header>
+      <header class="mobile-bar">
+        <a class="brand" routerLink="/app"><ng-container [ngTemplateOutlet]="brandMark" />Portal ATS</a>
+        <span class="spacer"></span>
+        <ng-container [ngTemplateOutlet]="themeButton" />
+        <ng-container [ngTemplateOutlet]="userMenu" />
+      </header>
+
+      <main class="frame__main"><router-outlet /></main>
+
+      <nav class="bottomnav" aria-label="Menú principal">
+        @for (item of bottomNav(); track item.path) {
+          <a [routerLink]="item.path" routerLinkActive="is-active" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: !!item.exact }">
+            <app-icon [icon]="item.icon" [size]="20" />{{ item.short ?? item.label }}
+          </a>
+        }
+        <a href="" role="button" [class.is-active]="moreOpen()" [attr.aria-expanded]="moreOpen()" (click)="$event.preventDefault(); moreOpen.set(!moreOpen())">
+          <app-icon [icon]="icons.Menu" [size]="20" />Más
+        </a>
+      </nav>
+    </div>
   </div>
 
-  <nav class="bottom-nav" aria-label="Menú principal">
-    @for (item of bottomNav(); track item.path) {
-      <a [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: !!item.exact }">
-        @if (item.tag) { <span class="tag">{{ item.tag }}</span> }
-        <app-icon [icon]="item.icon" [size]="22" [stroke]="1.8" />
-        <span>{{ item.label }}</span>
-      </a>
-    }
-  </nav>
-
-  @if (menuOpen()) {
-    <div class="scrim" (click)="menuOpen.set(false)"></div>
+  @if (moreOpen()) {
+    <div class="sheet" role="menu">
+      @for (item of moreNav(); track item.path) {
+        <a role="menuitem" [routerLink]="item.path"><app-icon [icon]="item.icon" [size]="20" />{{ item.label }}</a>
+      }
+      <span class="ia-status" [class.is-off]="!aiStatus()?.configured"><span class="ia-status__dot"></span>{{ aiStatus()?.configured ? 'IA activa · ' + aiLabel() : 'IA sin configurar' }}</span>
+      <button type="button" role="menuitem" (click)="logout()"><app-icon [icon]="icons.LogOut" [size]="20" />Cerrar sesión</button>
+    </div>
   }
-</div>
+}
+
+@if (menuOpen() || moreOpen()) {
+  <div class="scrim" (click)="menuOpen.set(false); moreOpen.set(false)"></div>
+}

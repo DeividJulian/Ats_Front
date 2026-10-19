@@ -48,7 +48,7 @@ describe('redesign helpers', () => {
     expect(sectionFor('/app/vacantes/3/editar', staff)).toBe('Vacantes');
     expect(sectionFor('/app/ranking?vacante=2', staff)).toBe('Ranking');
     expect(sectionFor('/portal/perfil', navFor('candidate'))).toBe('Mi perfil');
-    expect(navFor('recruiter').map((n) => n.label)).toEqual(['Panel', 'Vacantes', 'Ranking', 'Candidatos', 'Análisis']);
+    expect(navFor('recruiter').map((n) => n.label)).toEqual(['Panel', 'Vacantes', 'Candidatos', 'Ranking', 'Análisis masivo']);
   });
 
   it('builds readable job codes', () => {
