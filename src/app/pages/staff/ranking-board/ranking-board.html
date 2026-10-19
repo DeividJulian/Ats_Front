@@ -20,6 +20,13 @@
     </button>
   </div>
 
+  @if (aiStatus() && !aiStatus()?.configured) {
+    <div class="notice ai small">
+      <app-icon [icon]="i.Sparkles" [size]="16" />
+      <span>La evaluación con {{ aiStatus()?.provider | label: 'aiProvider' }} está desactivada: falta configurar <code>AI_API_KEY</code> en el servidor. El ranking y el puntaje funcionan igual.</span>
+    </div>
+  }
+
   @if (loading()) {
     <div class="card stack"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
   } @else if (ranking().length === 0) {
@@ -84,7 +91,7 @@
         </div>
 
         <div class="row">
-          <button type="button" class="btn ai small" [disabled]="evaluating() === item.application_id || !aiStatus()?.configured" [title]="aiStatus()?.configured ? '' : 'Requiere ANTHROPIC_API_KEY en el servidor'" (click)="evaluate(item)">
+          <button type="button" class="btn ai small" [disabled]="evaluating() === item.application_id || !aiStatus()?.configured" [title]="aiStatus()?.configured ? '' : 'Requiere configurar AI_API_KEY en el servidor'" (click)="evaluate(item)">
             @if (evaluating() === item.application_id) { <span class="spinner"></span> Analizando… } @else { <app-icon [icon]="i.Sparkles" [size]="15" /> {{ evaluations()[item.application_id] ? 'Ocultar evaluación' : 'Evaluar con IA' }} }
           </button>
           <button type="button" class="btn small soft" (click)="reviewing.set(item)"><app-icon [icon]="i.FileText" [size]="15" /> Ver expediente</button>
