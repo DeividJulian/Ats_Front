@@ -1,6 +1,6 @@
 # Portal ATS para pymes — Frontend
 
-Interfaz web del sistema de selección de personal: una página de inicio con la bolsa de empleo, login con roles, el panel del equipo de selección y el portal del candidato. Diseño claro y cálido, pensado primero para el celular (con barra de navegación inferior) y adaptado a escritorio. Se comunica con el [backend en FastAPI](https://github.com/DeividJulian/Ats_Backend).
+Interfaz web del sistema de selección de personal: una página de inicio con la bolsa de empleo, login sin contraseña (código por correo) con roles, el panel del equipo de selección y el portal del candidato. Diseño claro y cálido, pensado primero para el celular (con barra de navegación inferior) y adaptado a escritorio. Se comunica con el [backend en FastAPI](https://github.com/DeividJulian/Ats_Backend).
 
 Proyecto final de Programación Orientada a la Web — Universidad Cooperativa de Colombia.
 
@@ -24,7 +24,16 @@ El código está en inglés; todo lo que ve el usuario está en español.
 | Reclutador | Panel (embudo, demanda vs. disponibilidad de habilidades, resultados por vacante), vacantes (con redacción por IA), ranking de candidatos (modo anónimo, avance de estado, evaluación con IA, vincular y sugeridos), candidatos (extracción del perfil desde texto o PDF), guía de entrevista y análisis masivo |
 | Administrador | Todo lo del reclutador, más usuarios y roles, y carga de datos de demostración |
 
-El login tiene botones de **cuentas de demostración** (`reclutador@demo.com` y `camila.ortega@example.com`, clave `Demo1234`), que existen cuando un administrador carga los datos de demostración en el backend.
+### Inicio de sesión
+
+No hay contraseñas. En **Iniciar sesión** la persona escribe su correo y le llega un código de 6 dígitos para entrar; en **Crear cuenta** (solo candidatos) escribe su nombre y correo, y el código activa la cuenta. El paso del código es un componente compartido (`pages/auth/code-step.ts`) con botón para reenviar y una cuenta regresiva de 30 segundos, la misma espera que exige el backend.
+
+- `AuthService` guarda la sesión en `localStorage` (si el navegador lo bloquea, dura hasta recargar) y la descarta si el token ya venció. Al abrir la app confirma la sesión con `GET /auth/me`.
+- El interceptor agrega `Authorization: Bearer <token>` solo a las peticiones del backend y, ante un 401 fuera de las pantallas de login, cierra la sesión y lleva al login.
+- `authGuard`, `roleGuard` y `guestGuard` protegen las rutas según la sesión y el rol.
+- Al cerrar sesión se borran las respuestas del API que guardó el Service Worker, para que otra persona no las vea en ese navegador.
+
+Las **cuentas de demostración** (`reclutador@demo.com` y `camila.ortega@example.com`) tienen correos falsos: sus botones aparecen en el login solo si el backend tiene `ALLOW_DEMO_LOGIN=true` y alguien cargó los datos de demostración.
 
 ## Los tres workers
 
@@ -49,7 +58,7 @@ src/app/
 ├── pages/
 │   ├── landing/       # Página de inicio
 │   ├── public-job/    # Detalle público de una vacante
-│   ├── auth/          # Login y registro
+│   ├── auth/          # Login, registro y paso del código
 │   ├── staff/         # Panel, vacantes, ranking (tablero reutilizable), candidatos, análisis masivo, usuarios
 │   └── portal/        # Inicio, vacantes, postulaciones y perfil del candidato
 └── shared/            # Componentes reutilizables (íconos, modal, barra de puntaje, carga de PDF…)
@@ -76,7 +85,7 @@ Abre http://localhost:4200. En local el front usa `http://127.0.0.1:8001`; publi
 npm test -- --watch=false
 ```
 
-67 pruebas: sesión, interceptor y guardas de rutas, servicios de la API, lógica del análisis (con los mismos casos que el backend), workers, página de inicio, login, exportación CSV y utilidades.
+87 pruebas: sesión, interceptor y guardas de rutas, servicios de la API, lógica del análisis (con los mismos casos que el backend), workers, página de inicio, login, exportación CSV y utilidades.
 
 ## Desplegar en Vercel
 
