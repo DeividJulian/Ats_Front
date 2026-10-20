@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject, input, output, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, OnInit, afterNextRender, inject, input, output, signal, viewChild } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ArrowLeft, CircleAlert, MailCheck } from 'lucide-angular';
 
@@ -32,8 +32,8 @@ export function cleanCode(value: string): string {
 
       <div class="field">
         <label class="field__label" for="code">Código de verificación</label>
-        <input class="input code-input" id="code" [formControl]="code" inputmode="numeric" autocomplete="one-time-code"
-               maxlength="7" placeholder="000000" (input)="normalize()" [class.is-invalid]="code.touched && code.invalid" />
+        <input #codeInput class="input code-input" id="code" [formControl]="code" inputmode="numeric" autocomplete="one-time-code"
+               maxlength="7" placeholder="000000" (input)="onInput()" [class.is-invalid]="code.touched && code.invalid" />
         @if (code.touched && code.invalid) {
           <span class="field__error"><app-icon [icon]="i.CircleAlert" [size]="15" />Escribe los 6 números del código</span>
         }
@@ -77,6 +77,12 @@ export class CodeStep implements OnInit {
   protected readonly cooldown = signal(RESEND_SECONDS);
 
   private timer: ReturnType<typeof setInterval> | null = null;
+  private readonly codeInput = viewChild<ElementRef<HTMLInputElement>>('codeInput');
+
+  constructor() {
+    // The code arrives by email: the cursor waits in the field so it can be pasted right away
+    afterNextRender(() => this.codeInput()?.nativeElement.focus());
+  }
 
   ngOnInit(): void {
     this.startCooldown();
@@ -88,8 +94,14 @@ export class CodeStep implements OnInit {
     if (clean !== this.code.value) this.code.setValue(clean);
   }
 
-  protected verify(event: Event): void {
-    event.preventDefault();
+  protected onInput(): void {
+    this.normalize();
+    // With the six digits typed or pasted there is nothing else to wait for
+    if (this.code.value.length === 6 && !this.verifying()) this.verify();
+  }
+
+  protected verify(event?: Event): void {
+    event?.preventDefault();
     this.normalize();
     if (this.code.invalid) {
       this.code.markAsTouched();
