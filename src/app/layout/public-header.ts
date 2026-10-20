@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ChartColumn, Moon, Sun } from 'lucide-angular';
+import { ChartColumn, LogOut, Moon, Sun } from 'lucide-angular';
 
 import { AuthService, homeFor } from '../core/auth/auth.service';
 import { ThemeService } from '../core/services/theme.service';
@@ -25,7 +25,11 @@ import { Icon } from '../shared/icon';
           <app-icon [icon]="theme.theme() === 'dark' ? icons.Sun : icons.Moon" [size]="20" />
         </button>
         @if (auth.isLoggedIn()) {
+          <span class="t-small t-strong hide-m">{{ auth.user()?.name }}</span>
           <a class="btn btn--primary" [routerLink]="home()">Ir a mi panel</a>
+          <button type="button" class="btn btn--ghost btn--icon" aria-label="Cerrar sesión" title="Cerrar sesión" (click)="auth.logout('/')">
+            <app-icon [icon]="icons.LogOut" [size]="20" />
+          </button>
         } @else {
           <a class="btn btn--ghost hide-m" routerLink="/login">Iniciar sesión</a>
           <a class="btn btn--primary hide-m" routerLink="/registro">Crear cuenta</a>
@@ -39,6 +43,6 @@ import { Icon } from '../shared/icon';
 export class PublicHeader {
   protected readonly auth = inject(AuthService);
   protected readonly theme = inject(ThemeService);
-  protected readonly icons = { ChartColumn, Moon, Sun };
+  protected readonly icons = { ChartColumn, LogOut, Moon, Sun };
   protected readonly home = () => homeFor(this.auth.role());
 }
