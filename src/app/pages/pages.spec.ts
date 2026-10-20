@@ -112,6 +112,22 @@ describe('Login page', () => {
     expect(page.querySelector('[role=alert]')?.textContent).toContain('crea una primero');
   });
 
+  it('remembers the email of the last code requested', async () => {
+    const first = open();
+    await first.fixture.whenStable();
+    const input = first.page.querySelector<HTMLInputElement>('input[type=email]')!;
+    input.value = 'laura@empresa.com';
+    input.dispatchEvent(new Event('input'));
+    first.page.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+    first.backend.expectOne(`${API_URL}/auth/login`).flush({ message: 'ok', email: 'laura@empresa.com' });
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
+    const again = TestBed.createComponent(Login);
+    await again.whenStable();
+    expect((again.nativeElement as HTMLElement).querySelector<HTMLInputElement>('input[type=email]')!.value).toBe('laura@empresa.com');
+  });
+
   it('has no demo account buttons', async () => {
     const { backend, fixture, page } = open();
     await fixture.whenStable();

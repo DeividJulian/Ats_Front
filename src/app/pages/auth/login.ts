@@ -10,6 +10,17 @@ import { Icon } from '../../shared/icon';
 import { afterLoginUrl } from './auth-redirect';
 import { CodeStep } from './code-step';
 
+export const LAST_EMAIL_KEY = 'ats.lastEmail';
+
+/** The email used last time on this browser, to save typing it again. */
+export function rememberedEmail(): string {
+  try {
+    return localStorage.getItem(LAST_EMAIL_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
 /** Passwordless login: email first, then the six-digit code that arrives there. */
 @Component({
   selector: 'app-login',
@@ -32,7 +43,7 @@ export class Login {
   protected readonly error = signal<string | null>(null);
 
   protected readonly form = inject(NonNullableFormBuilder).group({
-    email: ['', [Validators.required, Validators.email]],
+    email: [rememberedEmail(), [Validators.required, Validators.email]],
   });
 
   protected bad(): boolean {
@@ -52,6 +63,11 @@ export class Login {
       next: () => {
         this.sending.set(false);
         this.email.set(email);
+        try {
+          localStorage.setItem(LAST_EMAIL_KEY, email);
+        } catch {
+          // Without storage it just isn't remembered
+        }
         this.step.set('code');
       },
       error: (e) => {
