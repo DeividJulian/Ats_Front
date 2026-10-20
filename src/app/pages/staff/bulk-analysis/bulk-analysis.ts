@@ -1,17 +1,6 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
-import {
-  Activity,
-  Cpu,
-  Download,
-  Gauge,
-  Layers,
-  Rocket,
-  Target,
-  TriangleAlert,
-  Trophy,
-  Zap,
-} from 'lucide-angular';
+import { Activity, CircleCheck, Download, Info, Layers, TriangleAlert, Trophy, Zap } from 'lucide-angular';
 import { forkJoin } from 'rxjs';
 
 import { Candidate, Job } from '../../../core/models';
@@ -21,6 +10,8 @@ import { errorMessage, initials } from '../../../core/utils/http-error';
 import { AnalysisJob, EducationKey, ResumeInput, ResumeResult } from '../../../core/workers/cv-analysis.logic';
 import { AnalysisMode, AnalysisRun, CvAnalysisService } from '../../../core/workers/cv-analysis.service';
 import { Icon } from '../../../shared/icon';
+import { LabelPipe } from '../../../shared/label.pipe';
+import { scoreTone } from '../../../shared/score-bar';
 
 /** Splits pasted text into resumes: one per block separated by a line with "---". */
 export function parsePastedResumes(text: string): ResumeInput[] {
@@ -56,7 +47,7 @@ export interface RunWithFreeze extends AnalysisRun {
 
 @Component({
   selector: 'app-bulk-analysis',
-  imports: [DecimalPipe, Icon],
+  imports: [DecimalPipe, Icon, LabelPipe],
   templateUrl: './bulk-analysis.html',
   styleUrl: './bulk-analysis.css',
 })
@@ -66,7 +57,9 @@ export class BulkAnalysis implements OnInit {
   private readonly toasts = inject(ToastService);
   protected readonly analysis = inject(CvAnalysisService);
 
-  protected readonly i = { Activity, Cpu, Download, Gauge, Layers, Rocket, Target, TriangleAlert, Trophy, Zap };
+  protected readonly i = { Activity, CircleCheck, Download, Info, Layers, TriangleAlert, Trophy, Zap };
+  protected readonly tones = ['avatar', 'avatar avatar--b', 'avatar avatar--g', 'avatar avatar--a'];
+  protected readonly tone = scoreTone;
   protected readonly initials = initials;
   protected readonly presets = [1000, 5000, 10000, 25000, 50000];
   protected readonly weights = [

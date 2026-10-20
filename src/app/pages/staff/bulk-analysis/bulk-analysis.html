@@ -1,127 +1,165 @@
-<div class="page narrow">
-  <div class="stack" style="gap: 8px">
-    <div class="row">
-      <span class="icon-tile ai"><app-icon [icon]="i.Cpu" [size]="20" /></span>
-      <h1>Análisis masivo de candidatos</h1>
+<div class="page">
+  <div class="page-head">
+    <div class="page-head__text">
+      <h1 class="t-h1">Análisis masivo</h1>
+      <p class="t-muted">Califica miles de hojas de vida contra una vacante en segundo plano, sin congelar la pantalla.</p>
     </div>
-    <p class="subtle">Motor de análisis en paralelo: califica miles de hojas de vida sin congelar la pantalla.</p>
-    <div class="fps" [class.bad]="!fluid()" role="status">
-      <span class="dot"></span>
-      <strong>{{ fps() }} FPS</strong>
-      <span class="small">{{ fluid() ? '(Fluido / sin bloqueo)' : '(Pantalla bloqueada)' }}</span>
-      <svg viewBox="0 0 120 30" width="96" height="24" aria-hidden="true"><polyline [attr.points]="sparkline()" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
-    </div>
-  </div>
-
-  <div class="card tint stack">
-    <div class="row">
-      <span class="badge ai"><app-icon [icon]="i.Layers" [size]="13" /> Multihilo con Web Workers</span>
-    </div>
-    <p class="small subtle">Calcula la compatibilidad semántica (NLP + TF-IDF) y la ponderación de miles de perfiles en un hilo aparte, sin trabar la interfaz.</p>
-    <div class="row">
-      <span class="icon-tile ai round"><app-icon [icon]="i.Gauge" [size]="20" /></span>
-      <div class="stack" style="gap: 0"><span class="small subtle">Capacidad de lote</span><strong class="big">50.000 CVs</strong></div>
+    <div class="fps" [class.bad]="!fluid()" role="status" title="Cuadros por segundo de esta página, medidos en vivo">
+      <span class="fps__dot"></span>
+      <span class="t-strong t-num">{{ fps() }} FPS</span>
+      <span class="t-small">{{ fluid() ? 'Pantalla fluida' : 'Pantalla bloqueada' }}</span>
+      <svg viewBox="0 0 120 30" width="88" height="22" aria-hidden="true"><polyline [attr.points]="sparkline()" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
     </div>
   </div>
 
-  <div class="card stack">
-    <div class="row"><span class="step-num">1</span><h3>Seleccionar vacante objetivo</h3><span class="spacer"></span>@if (selectedJob()?.status === 'open') { <span class="badge high">Activa</span> }</div>
-    <label class="job-select">
-      <app-icon [icon]="i.Target" [size]="18" />
-      <select (change)="jobId.set(+$any($event.target).value)" aria-label="Vacante">
-        @for (job of jobs(); track job.id) { <option [value]="job.id" [selected]="job.id === jobId()">{{ job.title }}</option> }
-      </select>
-    </label>
-    <span class="small subtle">{{ candidates().length }} candidatos registrados en el sistema</span>
-    <span class="small strong">Criterios de ponderación</span>
-    @for (w of weights; track w.label) {
-      <div class="weight">
-        <div class="row small"><span>{{ w.label }}</span><span class="spacer"></span><strong>{{ w.pct }}%</strong></div>
-        <div class="bar"><span class="brown" [style.width.%]="w.pct * 2"></span></div>
+  <div class="split">
+    <section class="card card--lg stack stack--lg">
+      <div class="field">
+        <label class="field__label" for="am-job">Comparar contra la vacante</label>
+        <select class="select" id="am-job" (change)="jobId.set(+$any($event.target).value)">
+          @for (job of jobs(); track job.id) { <option [value]="job.id" [selected]="job.id === jobId()">{{ job.title }} · {{ job.status | label: 'jobStatus' }}</option> }
+        </select>
       </div>
-    }
-    <span class="hint">Si la vacante no exige experiencia o educación, ese peso se reparte entre los demás criterios.</span>
-  </div>
 
-  <div class="card stack">
-    <div class="row"><span class="step-num">2</span><h3>Origen y volumen de CVs</h3><span class="spacer"></span><span class="badge ai">Modo benchmark</span></div>
-    <div class="seg">
-      <button type="button" [class.active]="source() === 'synthetic'" (click)="source.set('synthetic')">Sintéticos</button>
-      <button type="button" [class.active]="source() === 'system'" (click)="source.set('system')">Candidatos ATS</button>
-      <button type="button" [class.active]="source() === 'pasted'" (click)="source.set('pasted')">Pegar lote</button>
-    </div>
-
-    @switch (source()) {
-      @case ('synthetic') {
-        <div class="row"><span class="small subtle">Volumen a procesar</span><span class="spacer"></span><strong class="volume">{{ syntheticCount() | number }} CVs</strong></div>
-        <div class="presets">
-          @for (p of presets; track p) {
-            <button type="button" [class.active]="syntheticCount() === p" (click)="syntheticCount.set(p)">{{ p / 1000 }}k</button>
+      <div class="stack stack--sm">
+        <p class="t-label">Criterios de ponderación</p>
+        <div class="breakdown">
+          @for (w of weights; track w.label) {
+            <div class="breakdown__row"><span class="breakdown__label">{{ w.label }}</span><span class="breakdown__bar"><span [style.width.%]="w.pct * 2"></span></span><span class="breakdown__val">{{ w.pct }}%</span></div>
           }
         </div>
-        <input type="range" min="0" max="50000" step="1000" [value]="syntheticCount()" (input)="syntheticCount.set(+$any($event.target).value)" aria-label="Cantidad de hojas de vida sintéticas" />
-        <div class="row small subtle"><span>Muestreo rápido (1.000)</span><span class="spacer"></span><span>Estrés máximo (50.000)</span></div>
-        <div class="notice small">Generador sintético de perfiles con habilidades, experiencia y estudios variados (siempre los mismos para comparar).</div>
-      }
-      @case ('system') {
-        <label class="checkbox"><input type="checkbox" [checked]="includeSystem()" (change)="includeSystem.set($any($event.target).checked)" /> Incluir los {{ candidates().length }} candidatos registrados</label>
-        <p class="small subtle">Se analizan con la misma lógica que usa el servidor para el ranking.</p>
-      }
-      @case ('pasted') {
-        <textarea rows="5" placeholder="Ingeniera de sistemas con 3 años de experiencia en Python…&#10;---&#10;Contador público con 5 años…" [value]="pasted()" (input)="pasted.set($any($event.target).value)"></textarea>
-        <span class="hint">Separa cada hoja de vida con una línea que diga ---. Detectadas: {{ pastedResumes().length }}.</span>
-      }
-    }
-    <div class="notice small">Total del lote: <strong>{{ totalToAnalyze() | number }}</strong> hojas de vida ({{ syntheticCount() | number }} sintéticas{{ includeSystem() ? ', ' + candidates().length + ' del sistema' : '' }}{{ pastedResumes().length ? ', ' + pastedResumes().length + ' pegadas' : '' }}).</div>
-  </div>
+        <span class="field__hint">Si la vacante no exige experiencia o educación, ese peso se reparte entre los demás criterios.</span>
+      </div>
 
-  <div class="card stack">
-    <div class="row"><app-icon class="orange" [icon]="i.Rocket" [size]="22" /><h3>Panel de ejecución</h3></div>
-    <p class="small subtle">Ejecuta en paralelo o compara con el bloqueo del hilo principal.</p>
-    <span class="badge high ready"><span class="dot-live"></span> {{ analysis.workerSupported ? 'Worker listo' : 'Este navegador no soporta Web Workers' }}</span>
+      <div class="divider"></div>
 
-    <button type="button" class="run worker" [disabled]="analysis.running()" (click)="run('worker')">
-      <span class="run-icon"><app-icon [icon]="i.Zap" [size]="22" /></span>
-      <span class="stack" style="gap: 2px; text-align: left; flex: 1">
-        <strong>Analizar con Web Worker</strong>
-        <span class="small">En segundo plano · 0 cuadros perdidos · interfaz 100% viva</span>
-      </span>
-      <span class="tag">Recomendado</span>
-    </button>
-    <button type="button" class="run main" [disabled]="analysis.running()" (click)="run('main')">
-      <span class="run-icon warn"><app-icon [icon]="i.TriangleAlert" [size]="20" /></span>
-      <span class="stack" style="gap: 2px; text-align: left; flex: 1">
-        <strong>Analizar en el hilo principal</strong>
-        <span class="small">Prueba de estrés · congela temporalmente la pantalla</span>
-      </span>
-    </button>
+      <div class="stack">
+        <div class="row row--between">
+          <p class="t-label">Origen de las hojas de vida</p>
+          <span class="t-small t-muted">{{ candidates().length }} candidatos en el sistema</span>
+        </div>
+        <div class="seg" role="group" aria-label="Origen">
+          <button type="button" class="seg__btn" [class.is-active]="source() === 'synthetic'" (click)="source.set('synthetic')">Sintéticos</button>
+          <button type="button" class="seg__btn" [class.is-active]="source() === 'system'" (click)="source.set('system')">Candidatos ATS</button>
+          <button type="button" class="seg__btn" [class.is-active]="source() === 'pasted'" (click)="source.set('pasted')">Pegar lote</button>
+        </div>
 
-    <div class="progress-card">
+        @switch (source()) {
+          @case ('synthetic') {
+            <div class="row row--between"><span class="t-small t-muted">Volumen a procesar</span><span class="t-h3 t-num">{{ syntheticCount() | number }} CVs</span></div>
+            <div class="chips">
+              @for (p of presets; track p) {
+                <button type="button" class="filter" [class.is-active]="syntheticCount() === p" (click)="syntheticCount.set(p)">{{ p / 1000 }} mil</button>
+              }
+            </div>
+            <input class="range" type="range" min="0" max="50000" step="1000" [value]="syntheticCount()" (input)="syntheticCount.set(+$any($event.target).value)" aria-label="Cantidad de hojas de vida sintéticas" />
+            <p class="t-xs t-muted">Perfiles generados con habilidades, experiencia y estudios variados (siempre los mismos, para comparar corridas).</p>
+          }
+          @case ('system') {
+            <label class="check"><input type="checkbox" [checked]="includeSystem()" (change)="includeSystem.set($any($event.target).checked)" /> Incluir los {{ candidates().length }} candidatos registrados</label>
+            <p class="t-xs t-muted">Se analizan con la misma lógica que usa el servidor para el ranking.</p>
+          }
+          @case ('pasted') {
+            <textarea class="textarea" placeholder="Ingeniera de sistemas con 3 años de experiencia en Python…&#10;---&#10;Contador público con 5 años…" [value]="pasted()" (input)="pasted.set($any($event.target).value)"></textarea>
+            <span class="field__hint">Separa cada hoja de vida con una línea que diga ---. Detectadas: {{ pastedResumes().length }}.</span>
+          }
+        }
+
+        <div class="file">
+          <span class="file__icon lot-icon"><app-icon [icon]="i.Layers" [size]="20" /></span>
+          <div class="file__main">
+            <div class="file__name">{{ totalToAnalyze() | number }} hojas de vida en el lote</div>
+            <div class="t-xs t-muted">{{ syntheticCount() | number }} sintéticas{{ includeSystem() ? ' · ' + candidates().length + ' del sistema' : '' }}{{ pastedResumes().length ? ' · ' + pastedResumes().length + ' pegadas' : '' }}</div>
+          </div>
+        </div>
+      </div>
+
       @if (analysis.running()) {
-        <div class="row small"><strong>{{ analysis.mode() === 'worker' ? 'Procesando en el Web Worker…' : 'Procesando en el hilo principal…' }}</strong><span class="spacer"></span>@if (analysis.mode() === 'worker') { <button type="button" class="btn link small" (click)="analysis.cancel()">Cancelar</button> }</div>
-      } @else if (latest(); as run) {
-        <div class="row small"><strong>Listo: {{ run.output.total | number }} CVs procesados</strong><span class="spacer"></span><span class="subtle">Tiempo: {{ run.wallMs / 1000 | number: '1.2-2' }} s · Velocidad: {{ speed() | number }} CVs/s</span></div>
+        <div class="stack" aria-live="polite">
+          <div class="row row--between">
+            <span class="row t-strong" style="gap: 8px"><span class="spinner"></span>{{ analysis.mode() === 'worker' ? 'Analizando en el Web Worker…' : 'Analizando en el hilo principal…' }}</span>
+            <span class="t-strong t-num">{{ analysis.progress() * 100 | number: '1.0-0' }} %</span>
+          </div>
+          <div class="progress progress--lg" role="progressbar" [attr.aria-valuenow]="analysis.progress() * 100" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso del análisis"><div class="progress__bar" [style.width.%]="analysis.progress() * 100"></div></div>
+          @if (analysis.mode() === 'worker') {
+            <button type="button" class="btn btn--secondary" (click)="analysis.cancel()">Cancelar</button>
+          }
+        </div>
       } @else {
-        <div class="row small"><strong>Listo para procesar ({{ totalToAnalyze() | number }} CVs en espera)</strong></div>
+        <div class="stack stack--sm">
+          <button type="button" class="btn btn--primary btn--lg btn--block" [disabled]="!totalToAnalyze()" (click)="run('worker')">
+            <app-icon [icon]="i.Zap" [size]="20" />Analizar con Web Worker
+          </button>
+          <button type="button" class="btn btn--secondary btn--block" [disabled]="!totalToAnalyze()" (click)="run('main')">
+            <app-icon [icon]="i.TriangleAlert" [size]="18" />Comparar: analizar en el hilo principal
+          </button>
+        </div>
+        @if (latest(); as r) {
+          <div class="alert alert--success" role="status">
+            <app-icon [icon]="i.CircleCheck" [size]="20" />
+            <div class="alert__body"><div class="alert__title">Análisis terminado</div>{{ r.output.total | number }} hojas de vida en {{ r.wallMs / 1000 | number: '1.2-2' }} s · {{ speed() | number }} por segundo.</div>
+          </div>
+        }
       }
-      <div class="bar thick"><span class="ai" [style.width.%]="analysis.running() ? analysis.progress() * 100 : latest() ? 100 : 0"></span></div>
-      <div class="row small subtle"><span>{{ analysis.running() ? (analysis.progress() * 100 | number: '1.0-0') + '%' : latest() ? '100%' : '0%' }}</span></div>
-    </div>
+      <p class="row row--nowrap row--top t-xs t-muted"><app-icon [icon]="i.Info" [size]="16" />{{ analysis.workerSupported ? 'El Web Worker procesa en otro hilo del navegador: puedes seguir usando la página mientras tanto.' : 'Este navegador no soporta Web Workers: solo funciona el modo hilo principal.' }}</p>
+    </section>
+
+    <section class="card card--flush results" aria-live="polite">
+      <div class="row row--between results-head">
+        <h2 class="card__title">Resultados</h2>
+        @if (latest(); as r) {
+          <button type="button" class="btn btn--secondary btn--sm" (click)="exportCsv()"><app-icon [icon]="i.Download" [size]="16" />Exportar CSV</button>
+        }
+      </div>
+      @if (latest(); as r) {
+        <div class="grid-3 cohorts">
+          @for (g of r.output.percentiles; track g.pct) {
+            <div class="cohort" [class.cohort--top]="g.pct === 1">
+              <span class="t-label">Top {{ g.pct }} %</span>
+              <span class="t-h2 t-num">{{ g.count | number }}</span>
+              <span class="t-xs t-muted">Puntaje ≥ {{ g.minScore }}</span>
+            </div>
+          }
+        </div>
+        <p class="t-label sample-label">Mejores coincidencias</p>
+        <div class="list sample">
+          @for (res of r.output.top.slice(0, 10); track $index) {
+            <div class="list__item">
+              <span class="avatar avatar--sm" [class]="tones[$index % tones.length]">{{ initials(res.name) }}</span>
+              <div class="list__main">
+                <div class="list__title">{{ res.name }}</div>
+                <div class="list__sub ellipsis">{{ res.years }} años · {{ res.matched.join(', ') || 'sin coincidencias' }}</div>
+              </div>
+              <span class="score-pill" [class]="'score-pill--' + tone(res.classification)">{{ res.score }}</span>
+            </div>
+          }
+        </div>
+        <p class="t-xs t-muted sample-foot">El CSV incluye los mejores {{ r.output.top.length }} resultados con sus habilidades coincidentes, inferidas y faltantes.</p>
+      } @else {
+        <div class="empty">
+          <span class="empty__icon"><app-icon [icon]="i.Trophy" [size]="32" /></span>
+          <p class="empty__title">Los resultados aparecerán aquí</p>
+          <p class="empty__text">Elige la vacante y el lote, y presiona “Analizar con Web Worker”.</p>
+        </div>
+      }
+    </section>
   </div>
 
   @if (runs().length) {
-    <div class="card stack">
-      <div class="row"><app-icon class="orange" [icon]="i.Activity" [size]="22" /><h3>Benchmark de rendimiento</h3><span class="spacer"></span><span class="badge">Medido en este equipo</span></div>
+    <section class="card stack">
+      <div class="card__head" style="margin-bottom: 0">
+        <h2 class="card__title"><app-icon class="t-primary" [icon]="i.Activity" [size]="20" />Rendimiento medido en este equipo</h2>
+      </div>
       <div class="table-wrap">
-        <table>
+        <table class="table">
           <thead><tr><th>Modo</th><th class="num">CVs</th><th class="num">Tiempo de cálculo</th><th class="num">Mayor congelamiento</th><th class="num">Cuadros lentos</th></tr></thead>
           <tbody>
             @for (r of runs(); track $index) {
               <tr>
-                <td><span class="mode" [class.worker]="r.mode === 'worker'">{{ r.mode === 'worker' ? 'Web Worker' : 'Hilo principal' }}</span></td>
+                <td><span class="badge" [class.badge--abierta]="r.mode === 'worker'" [class.badge--medio]="r.mode !== 'worker'">{{ r.mode === 'worker' ? 'Web Worker' : 'Hilo principal' }}</span></td>
                 <td class="num">{{ r.output.total | number }}</td>
                 <td class="num">{{ r.output.elapsedMs / 1000 | number: '1.2-2' }} s</td>
-                <td class="num"><span class="freeze" [class.bad]="r.maxFrameGapMs > 100">{{ r.maxFrameGapMs | number }} ms</span></td>
+                <td class="num"><span class="t-strong" [class.freeze-bad]="r.maxFrameGapMs > 100">{{ r.maxFrameGapMs | number }} ms</span></td>
                 <td class="num">{{ r.longFrames }}</td>
               </tr>
             }
@@ -129,38 +167,10 @@
         </table>
       </div>
       @if (comparison(); as c) {
-        <div class="notice good small">Con el Web Worker la pantalla se congeló como máximo {{ c.worker.maxFrameGapMs }} ms; en el hilo principal, {{ c.main.maxFrameGapMs | number }} ms. El cálculo dura parecido: la diferencia es que el worker no bloquea la interfaz.</div>
+        <div class="alert alert--success"><app-icon [icon]="i.CircleCheck" [size]="20" /><div class="alert__body">Con el Web Worker la pantalla se congeló como máximo {{ c.worker.maxFrameGapMs }} ms; en el hilo principal, {{ c.main.maxFrameGapMs | number }} ms. El cálculo dura parecido: la diferencia es que el worker no bloquea la interfaz.</div></div>
       } @else {
-        <span class="hint">Ejecuta los dos modos con el mismo lote para compararlos. Más de 100 ms congelada se nota a simple vista.</span>
+        <p class="t-small t-muted">Ejecuta los dos modos con el mismo lote para compararlos. Más de 100 ms de congelamiento se nota a simple vista.</p>
       }
-    </div>
-  }
-
-  @if (latest(); as run) {
-    <div class="card stack">
-      <div class="row">
-        <div class="stack" style="gap: 2px; flex: 1"><h3>Candidatos clasificados por percentil</h3><span class="small subtle">Filtrado según el puntaje de ajuste del lote.</span></div>
-        <button type="button" class="btn small primary" (click)="exportCsv()"><app-icon [icon]="i.Download" [size]="15" /> Exportar CSV (Excel)</button>
-      </div>
-      @for (g of run.output.percentiles; track g.pct) {
-        <div class="cohort" [class]="'p' + g.pct">
-          <div class="row"><span class="badge">{{ g.pct === 1 ? '🏆 ' : '' }}Top {{ g.pct }}%</span><span class="spacer"></span><span class="small subtle">Puntaje ≥ {{ g.minScore }}</span></div>
-          <strong class="big">{{ g.count | number }} perfiles</strong>
-          <span class="small subtle">{{ g.pct === 1 ? 'Ajuste inmediato: los mejores perfiles del lote.' : g.pct === 5 ? 'Altamente calificados: pocas brechas.' : 'Preseleccionables para una revisión rápida.' }}</span>
-        </div>
-      }
-      <span class="small strong">Muestra de las mejores coincidencias</span>
-      @for (r of run.output.top.slice(0, 8); track $index) {
-        <div class="match">
-          <span class="avatar small" [class]="'c' + (($index % 4) + 1)">{{ initials(r.name) }}</span>
-          <div class="stack" style="gap: 0; flex: 1; min-width: 0">
-            <strong class="small ellipsis">{{ r.name }}</strong>
-            <span class="small subtle ellipsis">{{ r.years }} años de experiencia · {{ r.matched.join(', ') || 'sin coincidencias' }}</span>
-          </div>
-          <span class="score" [class]="r.classification">{{ r.score }}</span>
-        </div>
-      }
-      <span class="hint">El CSV incluye los mejores {{ run.output.top.length }} resultados con sus habilidades coincidentes, inferidas y faltantes.</span>
-    </div>
+    </section>
   }
 </div>

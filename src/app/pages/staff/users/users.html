@@ -1,90 +1,144 @@
 <div class="page">
   <div class="page-head">
-    <div>
-      <div class="eyebrow">Administración</div>
-      <h1>Usuarios y roles</h1>
-      <p class="subtle">{{ counts().admin }} administradores · {{ counts().recruiter }} reclutadores · {{ counts().candidate }} candidatos</p>
+    <div class="page-head__text">
+      <div class="row"><h1 class="t-h1">Usuarios</h1><span class="badge badge--admin">Solo administradores</span></div>
+      <p class="t-muted">{{ counts().admin }} administradores · {{ counts().recruiter }} reclutadores · {{ counts().candidate }} candidatos</p>
     </div>
-    <button type="button" class="btn primary" (click)="creating.set(true)">+ Nuevo reclutador o administrador</button>
+    <button type="button" class="btn btn--primary" (click)="creating.set(true)"><app-icon [icon]="i.UserPlus" [size]="18" />Nueva cuenta del equipo</button>
   </div>
 
-  <div class="notice small">Los <strong>candidatos</strong> crean su cuenta solos desde la página de inicio. Aquí creas las cuentas del equipo de selección.</div>
+  <div class="toolbar">
+    <span class="control control--icon">
+      <app-icon [icon]="i.Search" [size]="20" />
+      <input class="input" type="search" placeholder="Nombre o correo" aria-label="Buscar usuarios" (input)="search.set($any($event.target).value)" />
+    </span>
+    <span class="control role-filter">
+      <select class="select" aria-label="Filtrar por rol" (change)="roleFilter.set($any($event.target).value)">
+        <option value="all">Todos los roles</option>
+        <option value="admin">Administrador</option>
+        <option value="recruiter">Reclutador</option>
+        <option value="candidate">Candidato</option>
+      </select>
+    </span>
+  </div>
 
   @if (loading()) {
-    <div class="card stack"><div class="skeleton"></div><div class="skeleton"></div></div>
+    <div class="card stack"><span class="skeleton sk-line"></span><span class="skeleton sk-line"></span><span class="skeleton sk-line"></span></div>
   } @else {
-    <div class="card table-wrap">
-      <table>
-        <thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th>Creado</th><th></th></tr></thead>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th>Creado</th><th class="actions">Acciones</th></tr></thead>
         <tbody>
-          @for (user of users(); track user.id) {
+          @for (user of visible(); track user.id; let n = $index) {
             <tr [class.inactive]="!user.is_active">
               <td>
-                <div class="stack" style="gap: 0">
-                  <strong>{{ user.name }} @if (isMe(user)) { <span class="subtle small">(tú)</span> }</strong>
-                  <span class="subtle small">{{ user.email }}</span>
+                <div class="cell-user">
+                  <span class="avatar avatar--sm" [class]="tones[n % tones.length]">{{ initials(user.name) }}</span>
+                  <div><div class="t-strong">{{ user.name }} @if (isMe(user)) { <span class="t-xs t-muted">(tú)</span> }</div><div class="t-xs t-muted">{{ user.email }}</div></div>
                 </div>
               </td>
               <td>
                 @if (user.role === 'candidate' || isMe(user)) {
-                  <span class="badge" [class]="user.role">{{ user.role | label: 'role' }}</span>
+                  <span class="badge" [class]="roleBadge[user.role]">{{ user.role | label: 'role' }}</span>
                 } @else {
-                  <select class="role-select" [value]="user.role" aria-label="Rol" (change)="changeRole(user, $event)">
+                  <select class="select select--sm" [value]="user.role" [attr.aria-label]="'Rol de ' + user.name" (change)="changeRole(user, $event)">
                     <option value="recruiter">Reclutador</option>
                     <option value="admin">Administrador</option>
                   </select>
                 }
               </td>
-              <td><span class="badge" [class.high]="user.is_active" [class.low]="!user.is_active">{{ user.is_active ? 'Activo' : 'Desactivado' }}</span></td>
-              <td class="small subtle">{{ user.created_at | date: 'd MMM y' }}</td>
-              <td>
+              <td><span class="badge badge--dot" [class.badge--abierta]="user.is_active" [class.badge--cerrada]="!user.is_active">{{ user.is_active ? 'Activo' : 'Desactivado' }}</span></td>
+              <td class="t-muted">{{ user.created_at | date: 'd MMM y' }}</td>
+              <td class="actions">
                 @if (!isMe(user)) {
-                  <div class="row">
-                    <button type="button" class="btn small" (click)="toggleActive(user)">{{ user.is_active ? 'Desactivar' : 'Activar' }}</button>
-                    <button type="button" class="btn small" (click)="resetPassword(user)">Clave</button>
-                    <button type="button" class="btn small ghost danger" title="Eliminar cuenta" (click)="remove(user)">✕</button>
-                  </div>
+                  <button type="button" class="btn btn--ghost btn--icon btn--sm" [attr.aria-label]="'Cambiar clave de ' + user.name" title="Cambiar clave" (click)="resetPassword(user)"><app-icon [icon]="i.KeyRound" [size]="18" /></button>
+                  @if (user.is_active) {
+                    <button type="button" class="btn btn--danger-ghost btn--sm" (click)="toggleActive(user)">Desactivar</button>
+                  } @else {
+                    <button type="button" class="btn btn--ghost btn--sm" (click)="toggleActive(user)">Activar</button>
+                  }
+                  <button type="button" class="btn btn--danger-ghost btn--icon btn--sm" [attr.aria-label]="'Eliminar la cuenta de ' + user.name" title="Eliminar cuenta" (click)="remove(user)"><app-icon [icon]="i.Trash2" [size]="18" /></button>
                 }
               </td>
             </tr>
+          } @empty {
+            <tr><td colspan="5" class="t-muted">Ningún usuario coincide con la búsqueda.</td></tr>
           }
         </tbody>
       </table>
     </div>
   }
 
-  <div class="card stack danger-zone">
-    <h2>Datos de demostración</h2>
-    <p class="subtle small">Carga 3 vacantes, 9 candidatos, 10 postulaciones y dos cuentas de prueba (reclutador y candidata, clave <code>Demo1234</code>). Reiniciar borra todo lo demás y solo funciona si el servidor lo permite.</p>
-    <div class="row">
-      <button type="button" class="btn" [disabled]="seeding()" (click)="loadDemo(false)">Cargar datos de demostración</button>
-      <button type="button" class="btn danger" [disabled]="seeding()" (click)="loadDemo(true)">Reiniciar y cargar</button>
-    </div>
+  <div class="grid-2">
+    <section class="card card--ia stack">
+      <div class="row row--nowrap">
+        <span class="ia-mark"><app-icon [icon]="i.Sparkles" [size]="18" /></span>
+        <div class="list__main"><h2 class="t-h3">Capa de IA</h2><p class="t-small t-muted">Opcional · asesora</p></div>
+        @if (aiStatus()?.configured) {
+          <span class="badge badge--dot badge--abierta">Configurada</span>
+        } @else {
+          <span class="badge badge--dot badge--cerrada">Sin configurar</span>
+        }
+      </div>
+      <div class="stack stack--sm t-small">
+        <div class="row row--between"><span class="t-muted">Proveedor</span><span class="t-strong">{{ aiStatus()?.provider | label: 'aiProvider' }}</span></div>
+        <div class="row row--between"><span class="t-muted">Modelo</span><span class="t-strong">{{ aiStatus()?.configured ? aiStatus()?.model : '—' }}</span></div>
+        <div class="row row--between"><span class="t-muted">Clave</span><span class="t-strong">{{ aiStatus()?.configured ? 'AI_API_KEY configurada en el servidor' : 'Falta AI_API_KEY en el servidor' }}</span></div>
+        <div class="row row--between"><span class="t-muted">Datos personales enviados</span><span class="t-strong">Ninguno</span></div>
+      </div>
+    </section>
+    <section class="card stack">
+      <h2 class="card__title">Qué puede hacer cada rol</h2>
+      <ul class="stack stack--sm t-small">
+        <li class="row row--nowrap row--top"><span class="badge badge--admin">Administrador</span><span>Todo lo del reclutador, más usuarios y datos de demostración.</span></li>
+        <li class="row row--nowrap row--top"><span class="badge badge--reclutador">Reclutador</span><span>Vacantes, candidatos, ranking y análisis.</span></li>
+        <li class="row row--nowrap row--top"><span class="badge badge--candidato">Candidato</span><span>Crea su cuenta solo, busca vacantes, se postula y edita su perfil.</span></li>
+      </ul>
+    </section>
   </div>
+
+  <section class="card stack">
+    <h2 class="card__title">Datos de demostración</h2>
+    <p class="t-small t-muted">Carga 3 vacantes, 9 candidatos, 10 postulaciones y dos cuentas de prueba (reclutador y candidata, clave <code>Demo1234</code>). Reiniciar borra todo lo demás y solo funciona si el servidor lo permite.</p>
+    <div class="row">
+      <button type="button" class="btn btn--secondary" [class.is-loading]="seeding()" [disabled]="seeding()" (click)="loadDemo(false)">Cargar datos de demostración</button>
+      <button type="button" class="btn btn--danger-ghost" [disabled]="seeding()" (click)="loadDemo(true)">Reiniciar y cargar</button>
+    </div>
+  </section>
 
   @if (creating()) {
     <app-modal title="Nueva cuenta del equipo" (closed)="creating.set(false)">
-      <form class="form" [formGroup]="form" (ngSubmit)="create()" novalidate>
-        <div class="two">
-          <label>Nombre<input formControlName="name" />
-            @if (form.controls.name.touched && form.controls.name.invalid) { <span class="error-text">Mínimo 2 caracteres</span> }
-          </label>
-          <label>Correo<input type="email" formControlName="email" />
-            @if (form.controls.email.touched && form.controls.email.invalid) { <span class="error-text">Correo no válido</span> }
-          </label>
-          <label>Contraseña inicial<input type="text" formControlName="password" autocomplete="new-password" />
-            @if (form.controls.password.touched && form.controls.password.invalid) { <span class="error-text">Mínimo 8 caracteres</span> }
-          </label>
-          <label>Rol
-            <select formControlName="role">
+      <form class="stack" [formGroup]="form" (ngSubmit)="create()" novalidate>
+        <p class="t-small t-muted">Los candidatos crean su cuenta solos desde la página de inicio. Aquí creas las cuentas del equipo de selección.</p>
+        <div class="form-grid">
+          <div class="field">
+            <label class="field__label" for="us-name">Nombre <span class="req">*</span></label>
+            <input class="input" id="us-name" formControlName="name" [class.is-invalid]="form.controls.name.touched && form.controls.name.invalid" />
+            @if (form.controls.name.touched && form.controls.name.invalid) { <span class="field__error">Mínimo 2 caracteres</span> }
+          </div>
+          <div class="field">
+            <label class="field__label" for="us-mail">Correo <span class="req">*</span></label>
+            <input class="input" id="us-mail" type="email" formControlName="email" [class.is-invalid]="form.controls.email.touched && form.controls.email.invalid" />
+            @if (form.controls.email.touched && form.controls.email.invalid) { <span class="field__error">Correo no válido</span> }
+          </div>
+          <div class="field">
+            <label class="field__label" for="us-pass">Contraseña inicial <span class="req">*</span></label>
+            <input class="input" id="us-pass" type="text" formControlName="password" autocomplete="new-password" [class.is-invalid]="form.controls.password.touched && form.controls.password.invalid" />
+            @if (form.controls.password.touched && form.controls.password.invalid) { <span class="field__error">Mínimo 8 caracteres</span> }
+          </div>
+          <div class="field">
+            <label class="field__label" for="us-role">Rol</label>
+            <select class="select" id="us-role" formControlName="role">
               <option value="recruiter">Reclutador</option>
               <option value="admin">Administrador</option>
             </select>
-          </label>
+          </div>
         </div>
-        <div class="row">
-          <button type="submit" class="btn primary" [disabled]="saving()">{{ saving() ? 'Creando…' : 'Crear cuenta' }}</button>
-          <button type="button" class="btn ghost" (click)="creating.set(false)">Cancelar</button>
+        <div class="row" style="justify-content: flex-end">
+          <button type="button" class="btn btn--ghost" (click)="creating.set(false)">Cancelar</button>
+          <button type="submit" class="btn btn--primary" [class.is-loading]="saving()" [disabled]="saving()">
+            @if (saving()) { <span class="spinner"></span>Creando… } @else { Crear cuenta }
+          </button>
         </div>
       </form>
     </app-modal>

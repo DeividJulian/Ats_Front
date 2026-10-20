@@ -1,24 +1,28 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { KeyRound, Search, Sparkles, Trash2, UserPlus } from 'lucide-angular';
 
 import { AuthService } from '../../../core/auth/auth.service';
-import { User, UserUpdate } from '../../../core/models';
-import { StatsService, UserService } from '../../../core/services/api.services';
+import { AiStatus, Role, User, UserUpdate } from '../../../core/models';
+import { AiService, StatsService, UserService } from '../../../core/services/api.services';
 import { ToastService } from '../../../core/services/toast.service';
-import { errorMessage } from '../../../core/utils/http-error';
+import { errorMessage, initials } from '../../../core/utils/http-error';
+import { normalize } from '../../../core/workers/cv-analysis.logic';
 import { reloadOnRemoteChanges } from '../../../core/workers/tab-sync.service';
 import { LabelPipe } from '../../../shared/label.pipe';
+import { Icon } from '../../../shared/icon';
 import { Modal } from '../../../shared/modal';
 
 @Component({
   selector: 'app-users',
-  imports: [ReactiveFormsModule, DatePipe, LabelPipe, Modal],
+  imports: [ReactiveFormsModule, DatePipe, LabelPipe, Icon, Modal],
   templateUrl: './users.html',
   styles: `
-    .role-select { width: auto; padding: 6px 10px; font-size: 13px; }
-    .inactive td { opacity: 0.55; }
-    .danger-zone { border-color: rgba(248, 113, 113, 0.4); }
+    .toolbar .control:first-child { max-width: 460px; }
+    .role-filter { flex: 0 1 220px; }
+    .select--sm { width: auto; min-height: 36px; padding: 6px 38px 6px 12px; font-size: 13.5px; }
+    .inactive td { opacity: .6; }
   `,
 })
 export class Users {
@@ -27,7 +31,24 @@ export class Users {
   private readonly toasts = inject(ToastService);
   protected readonly auth = inject(AuthService);
 
+  private readonly ai = inject(AiService);
+
+  protected readonly i = { KeyRound, Search, Sparkles, Trash2, UserPlus };
+  protected readonly tones = ['avatar', 'avatar avatar--b', 'avatar avatar--g', 'avatar avatar--a'];
+  protected readonly initials = initials;
+  protected readonly roleBadge: Record<Role, string> = { admin: 'badge--admin', recruiter: 'badge--reclutador', candidate: 'badge--candidato' };
+  protected readonly aiStatus = signal<AiStatus | null>(null);
+  protected readonly search = signal('');
+  protected readonly roleFilter = signal<'all' | Role>('all');
   protected readonly users = signal<User[]>([]);
+  protected readonly visible = computed(() => {
+    const term = normalize(this.search().trim());
+    return this.users().filter(
+      (u) =>
+        (this.roleFilter() === 'all' || u.role === this.roleFilter()) &&
+        (!term || normalize(`${u.name} ${u.email}`).includes(term)),
+    );
+  });
   protected readonly loading = signal(true);
   protected readonly creating = signal(false);
   protected readonly saving = signal(false);
@@ -51,6 +72,7 @@ export class Users {
 
   constructor() {
     reloadOnRemoteChanges(() => this.load());
+    this.ai.status().subscribe({ next: (s) => this.aiStatus.set(s), error: () => this.aiStatus.set(null) });
   }
 
   protected load(): void {
