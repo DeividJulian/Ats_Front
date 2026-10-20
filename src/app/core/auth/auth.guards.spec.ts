@@ -50,4 +50,14 @@ describe('route guards', () => {
     loginAs('admin');
     expect(run(guestGuard)).toBe('/app');
   });
+
+  it('an expired token counts as having no session', () => {
+    localStorage.clear();
+    localStorage.setItem(TOKEN_KEY, fakeToken(Math.floor(Date.now() / 1000) - 60));
+    localStorage.setItem(USER_KEY, JSON.stringify(USER));
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideRouter([])] });
+    expect(run(authGuard)).toBe('/login?redirect=%2Fapp%2Fvacantes');
+    expect(run(guestGuard)).toBe(true);
+  });
 });

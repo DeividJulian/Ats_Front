@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
+import { AuthService } from './core/auth/auth.service';
 import { ThemeService } from './core/services/theme.service';
 import { ConnectionService } from './core/workers/connection.service';
 import { TabSyncService } from './core/workers/tab-sync.service';
@@ -22,5 +23,7 @@ export class App {
     inject(ConnectionService);
     inject(TabSyncService);
     inject(ThemeService);
+    // Confirms with the server that the saved session is still valid (an expired one is closed)
+    inject(AuthService).refreshProfile();
   }
 }

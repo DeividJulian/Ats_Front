@@ -48,9 +48,24 @@ describe('authInterceptor', () => {
     expect(TestBed.inject(AuthService).isLoggedIn()).toBe(true);
   });
 
-  it('a wrong password on the login page does not log anyone out', () => {
-    http.post(`${API_URL}/auth/login`, {}).subscribe({ error: () => undefined });
-    backend.expectOne(`${API_URL}/auth/login`).flush({ detail: 'Correo o contraseña incorrectos' }, { status: 401, statusText: 'Unauthorized' });
+  it('a wrong code on the login screens does not log anyone out', () => {
+    for (const path of ['/auth/verify', '/auth/login', '/auth/register']) {
+      http.post(`${API_URL}${path}`, {}).subscribe({ error: () => undefined });
+      backend.expectOne(`${API_URL}${path}`).flush({ detail: 'Código incorrecto' }, { status: 401, statusText: 'Unauthorized' });
+    }
     expect(TestBed.inject(AuthService).isLoggedIn()).toBe(true);
+  });
+
+  it('a 401 from /auth/me does close the session (the saved one is no longer valid)', () => {
+    vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    http.get(`${API_URL}/auth/me`).subscribe({ error: () => undefined });
+    backend.expectOne(`${API_URL}/auth/me`).flush({ detail: 'inválida' }, { status: 401, statusText: 'Unauthorized' });
+    expect(TestBed.inject(AuthService).isLoggedIn()).toBe(false);
+  });
+
+  it('sends no token when there is no session', () => {
+    TestBed.inject(AuthService).logout(null);
+    http.post(`${API_URL}/auth/login`, { email: 'a@b.co' }).subscribe();
+    expect(backend.expectOne(`${API_URL}/auth/login`).request.headers.has('Authorization')).toBe(false);
   });
 });

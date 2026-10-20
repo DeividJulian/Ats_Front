@@ -14,5 +14,7 @@ export const USER: User = {
   role: 'recruiter',
   candidate_id: null,
   is_active: true,
+  verified: true,
   created_at: '2026-10-10T00:00:00Z',
+  last_login: null,
 };

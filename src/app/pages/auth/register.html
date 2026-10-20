@@ -3,71 +3,54 @@
     <a class="brand" routerLink="/"><span class="brand__mark"><app-icon [icon]="i.ChartColumn" [size]="20" [stroke]="2.25" /></span>Portal ATS</a>
     <div class="stack" style="margin-top: auto">
       <h2 class="t-h1" style="max-width: 480px">Tu próximo empleo empieza aquí</h2>
-      <p class="aside-text">Crea tu cuenta en menos de un minuto. Puedes cambiar tus datos cuando quieras.</p>
+      <p class="aside-text">Sin contraseñas que recordar: cada vez que entres te enviamos un código a tu correo.</p>
     </div>
     <ul class="steps-aside">
-      <li class="row row--nowrap row--top"><span class="step-card__num">1</span><div><p class="t-strong">Crea tu cuenta</p><p class="t-small aside-text">Nombre, correo y contraseña, nada más.</p></div></li>
-      <li class="row row--nowrap row--top"><span class="step-card__num">2</span><div><p class="t-strong">Sube tu hoja de vida</p><p class="t-small aside-text">Detectamos tus habilidades y experiencia.</p></div></li>
-      <li class="row row--nowrap row--top"><span class="step-card__num">3</span><div><p class="t-strong">Postúlate</p><p class="t-small aside-text">Te mostramos qué vacantes encajan contigo y en qué va cada proceso.</p></div></li>
+      <li class="row row--nowrap row--top"><span class="step-card__num">1</span><div><p class="t-strong">Crea tu cuenta</p><p class="t-small aside-text">Nombre y correo, nada más.</p></div></li>
+      <li class="row row--nowrap row--top"><span class="step-card__num">2</span><div><p class="t-strong">Confirma tu correo</p><p class="t-small aside-text">Escribe el código de 6 dígitos que te llega.</p></div></li>
+      <li class="row row--nowrap row--top"><span class="step-card__num">3</span><div><p class="t-strong">Sube tu hoja de vida y postúlate</p><p class="t-small aside-text">Te mostramos qué vacantes encajan contigo.</p></div></li>
     </ul>
   </aside>
 
   <main class="auth__main">
-    <form class="auth__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="auth__form">
       <a class="brand show-m" routerLink="/"><span class="brand__mark"><app-icon [icon]="i.ChartColumn" [size]="20" [stroke]="2.25" /></span>Portal ATS</a>
       <div class="stack stack--sm">
-        <h1 class="t-h1">Crear cuenta</h1>
-        <p class="t-muted">¿Ya tienes una? <a routerLink="/login" [queryParams]="{ redirect: redirect() }" class="t-strong">Inicia sesión</a></p>
+        <h1 class="t-h1">{{ step() === 'form' ? 'Crear cuenta' : 'Activa tu cuenta' }}</h1>
+        @if (step() === 'form') {
+          <p class="t-muted">¿Ya tienes una? <a routerLink="/login" [queryParams]="{ redirect: redirect() }" class="t-strong">Inicia sesión</a></p>
+        }
       </div>
 
-      @if (error()) {
-        <div class="alert alert--danger" role="alert"><app-icon [icon]="i.CircleAlert" [size]="20" /><div class="alert__body">{{ error() }}</div></div>
-      }
-
-      <div class="field">
-        <label class="field__label" for="rg-name">Nombre completo <span class="req">*</span></label>
-        <input class="input" id="rg-name" formControlName="name" autocomplete="name" placeholder="Laura Valentina Gómez" [class.is-invalid]="invalid('name')" />
-        @if (invalid('name')) { <span class="field__error"><app-icon [icon]="i.CircleAlert" [size]="15" />Escribe tu nombre y apellido</span> }
-      </div>
-
-      <div class="form-grid">
-        <div class="field">
-          <label class="field__label" for="rg-mail">Correo electrónico <span class="req">*</span></label>
-          <input class="input" id="rg-mail" type="email" formControlName="email" autocomplete="email" placeholder="nombre@correo.co" [class.is-invalid]="invalid('email')" />
-          @if (invalid('email')) { <span class="field__error"><app-icon [icon]="i.CircleAlert" [size]="15" />Escribe un correo válido</span> }
-        </div>
-        <div class="field">
-          <label class="field__label" for="rg-phone">Teléfono</label>
-          <input class="input" id="rg-phone" type="tel" formControlName="phone" autocomplete="tel" placeholder="300 123 4567" />
-          <span class="field__hint">Opcional</span>
-        </div>
-      </div>
-
-      <div class="field">
-        <label class="field__label" for="rg-pass">Contraseña <span class="req">*</span></label>
-        <span class="control">
-          <input class="input" id="rg-pass" [type]="showPassword() ? 'text' : 'password'" formControlName="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" [class.is-invalid]="invalid('password')" />
-          <button type="button" class="reveal" (click)="showPassword.set(!showPassword())" [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
-            <app-icon [icon]="showPassword() ? i.EyeOff : i.Eye" [size]="18" />
+      @if (step() === 'form') {
+        @if (error()) {
+          <div class="alert alert--danger" role="alert"><app-icon [icon]="i.CircleAlert" [size]="20" /><div class="alert__body">{{ error() }}</div></div>
+        }
+        <form class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="field">
+            <label class="field__label" for="rg-name">Nombre completo <span class="req">*</span></label>
+            <input class="input" id="rg-name" formControlName="name" autocomplete="name" placeholder="Laura Valentina Gómez" [class.is-invalid]="invalid('name')" />
+            @if (invalid('name')) { <span class="field__error"><app-icon [icon]="i.CircleAlert" [size]="15" />Escribe tu nombre y apellido</span> }
+          </div>
+          <div class="field">
+            <label class="field__label" for="rg-mail">Correo electrónico <span class="req">*</span></label>
+            <input class="input" id="rg-mail" type="email" formControlName="email" autocomplete="email" placeholder="nombre@correo.co" [class.is-invalid]="invalid('email')" />
+            @if (invalid('email')) { <span class="field__error"><app-icon [icon]="i.CircleAlert" [size]="15" />Escribe un correo válido</span> }
+            <span class="field__hint">Ahí te llegará el código para entrar.</span>
+          </div>
+          <div class="field">
+            <label class="field__label" for="rg-phone">Teléfono</label>
+            <input class="input" id="rg-phone" type="tel" formControlName="phone" autocomplete="tel" placeholder="300 123 4567" />
+            <span class="field__hint">Opcional</span>
+          </div>
+          <button type="submit" class="btn btn--primary btn--lg btn--block" [class.is-loading]="sending()" [disabled]="sending()">
+            @if (sending()) { <span class="spinner"></span>Creando cuenta… } @else { Crear cuenta }
           </button>
-        </span>
-        <div class="progress" aria-hidden="true" style="height: 6px"><div class="progress__bar" [style.width.%]="strength().pct" [style.background]="strength().color"></div></div>
-        <span class="field__hint">{{ strength().label }}</span>
-        @if (invalid('password')) { <span class="field__error"><app-icon [icon]="i.CircleAlert" [size]="15" />Usa al menos 8 caracteres</span> }
-      </div>
-
-      <div class="field">
-        <label class="field__label" for="rg-confirm">Confirma la contraseña <span class="req">*</span></label>
-        <input class="input" id="rg-confirm" [type]="showPassword() ? 'text' : 'password'" formControlName="confirm" autocomplete="new-password"
-               [class.is-invalid]="form.controls.confirm.touched && (form.controls.confirm.invalid || form.hasError('mismatch'))" />
-        @if (form.controls.confirm.touched && form.hasError('mismatch')) { <span class="field__error"><app-icon [icon]="i.CircleAlert" [size]="15" />Las contraseñas no coinciden</span> }
-      </div>
-
-      <button type="submit" class="btn btn--primary btn--lg btn--block" [class.is-loading]="sending()" [disabled]="sending()">
-        @if (sending()) { <span class="spinner"></span>Creando cuenta… } @else { Crear cuenta }
-      </button>
-
-      <div class="alert alert--info"><app-icon [icon]="i.Building2" [size]="20" /><div class="alert__body"><div class="alert__title">¿Eres empresa?</div>Las cuentas de reclutador las crea el administrador desde Usuarios.</div></div>
-    </form>
+        </form>
+        <div class="alert alert--info"><app-icon [icon]="i.Building2" [size]="20" /><div class="alert__body"><div class="alert__title">¿Eres empresa?</div>Las cuentas de reclutador las crea el administrador desde Usuarios.</div></div>
+      } @else {
+        <app-code-step [email]="email()" submitLabel="Activar mi cuenta" (verified)="activated($event)" (back)="step.set('form')" />
+      }
+    </div>
   </main>
 </div>

@@ -1,4 +1,3 @@
-import { passwordStrength } from '../pages/auth/register';
 import { paragraphs } from '../pages/public-job/public-job';
 import { timeAgo } from './ago.pipe';
 import { yearsLabel } from './years.pipe';
@@ -27,14 +26,6 @@ describe('timeAgo', () => {
 });
 
 describe('form helpers', () => {
-  it('rates the password strength from 0 to 4', () => {
-    expect(passwordStrength('')).toBe(0);
-    expect(passwordStrength('abc')).toBe(1);
-    expect(passwordStrength('abcdefgh')).toBe(1);
-    expect(passwordStrength('Abcdefgh1')).toBe(3);
-    expect(passwordStrength('Abcdefgh1!')).toBe(4);
-  });
-
   it('splits a job text into paragraphs', () => {
     expect(paragraphs('Uno\n\n  Dos  \n')).toEqual(['Uno', 'Dos']);
     expect(paragraphs(null)).toEqual([]);

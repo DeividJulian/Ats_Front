@@ -19,8 +19,9 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
 
   return next(authorized).pipe(
     catchError((error: unknown) => {
-      const isLoginAttempt = request.url.startsWith(`${API_URL}/auth/login`);
-      if (isApi && !isLoginAttempt && error instanceof HttpErrorResponse && error.status === 401 && auth.token()) {
+      // A 401 from the login screens is a wrong code, not an expired session; /auth/me does check the session
+      const isAuthRoute = request.url.startsWith(`${API_URL}/auth/`) && !request.url.startsWith(`${API_URL}/auth/me`);
+      if (isApi && !isAuthRoute && error instanceof HttpErrorResponse && error.status === 401 && auth.token()) {
         auth.logout('/login?expired=1');
       }
       return throwError(() => error);

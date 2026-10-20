@@ -1,14 +1,13 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { FormControl, FormGroup } from '@angular/forms';
 import { Router, provideRouter } from '@angular/router';
 
 import { API_URL } from '../core/config/api.config';
 import { Candidate, JobRecommendation, MyApplication, PublicJob } from '../core/models';
 import { USER, fakeToken } from '../../testing/fixtures';
 import { Login } from './auth/login';
-import { passwordsMatch } from './auth/register';
+import { cleanCode } from './auth/code-step';
 import { Landing } from './landing/landing';
 import { timeline } from './portal/applications/applications';
 import { applicationCounts } from './portal/home/home';
@@ -71,49 +70,73 @@ describe('Landing page', () => {
 });
 
 describe('Login page', () => {
-  it('validates the fields before calling the server', async () => {
+  function open(demo = false) {
     const backend = setup();
     const fixture = TestBed.createComponent(Login);
+    backend.expectOne(`${API_URL}/auth/options`).flush({ demo_login: demo });
+    return { backend, fixture, page: fixture.nativeElement as HTMLElement };
+  }
+
+  it('validates the email before calling the server', async () => {
+    const { backend, fixture, page } = open();
     await fixture.whenStable();
-    const page = fixture.nativeElement as HTMLElement;
     page.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
     await fixture.whenStable();
     expect(page.textContent).toContain('Escribe un correo válido');
     backend.expectNone(`${API_URL}/auth/login`);
   });
 
-  it('logs in with a demo account and goes to the role home', async () => {
-    const backend = setup();
-    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
-    const fixture = TestBed.createComponent(Login);
+  it('asks for a code and then shows the code step', async () => {
+    const { backend, fixture, page } = open();
     await fixture.whenStable();
-    const demo = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.demo button');
-    expect(demo).toHaveLength(2);
-    demo[0].click();
-
+    const input = page.querySelector<HTMLInputElement>('input[type=email]')!;
+    input.value = 'Laura@Empresa.com';
+    input.dispatchEvent(new Event('input'));
+    page.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
     const req = backend.expectOne(`${API_URL}/auth/login`);
-    expect(req.request.body).toEqual({ email: 'reclutador@demo.com', password: 'Demo1234' });
-    req.flush({ access_token: fakeToken(Math.floor(Date.now() / 1000) + 3600), token_type: 'bearer', user: USER });
-    expect(navigate).toHaveBeenCalledWith('/app');
+    expect(req.request.body).toEqual({ email: 'laura@empresa.com' });
+    req.flush({ message: 'Te enviamos un código', email: 'laura@empresa.com' });
+    await fixture.whenStable();
+    expect(page.textContent).toContain('Revisa tu correo');
+    expect(page.querySelector('input[autocomplete=one-time-code]')).not.toBeNull();
   });
 
-  it('shows the server message when the password is wrong', async () => {
-    const backend = setup();
-    const fixture = TestBed.createComponent(Login);
+  it('shows the server message when the email has no account', async () => {
+    const { backend, fixture, page } = open();
     await fixture.whenStable();
-    (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.demo button')[1].click();
-    backend.expectOne(`${API_URL}/auth/login`).flush({ detail: 'Correo o contraseña incorrectos' }, { status: 401, statusText: 'Unauthorized' });
+    const input = page.querySelector<HTMLInputElement>('input[type=email]')!;
+    input.value = 'nadie@mail.com';
+    input.dispatchEvent(new Event('input'));
+    page.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+    backend.expectOne(`${API_URL}/auth/login`).flush({ detail: 'No hay una cuenta con ese correo: crea una primero' }, { status: 404, statusText: 'Not Found' });
     await fixture.whenStable();
-    expect((fixture.nativeElement as HTMLElement).querySelector('[role=alert]')?.textContent).toContain('Correo o contraseña incorrectos');
+    expect(page.querySelector('[role=alert]')?.textContent).toContain('crea una primero');
+  });
+
+  it('shows the demo accounts only when the server allows them', async () => {
+    const hidden = open(false);
+    await hidden.fixture.whenStable();
+    expect(hidden.page.querySelectorAll('.demo button')).toHaveLength(0);
+
+    TestBed.resetTestingModule();
+    const { backend, fixture, page } = open(true);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    await fixture.whenStable();
+    const demo = page.querySelectorAll<HTMLButtonElement>('.demo button');
+    expect(demo).toHaveLength(2);
+    demo[0].click();
+    const req = backend.expectOne(`${API_URL}/auth/demo`);
+    expect(req.request.body).toEqual({ account: 'recruiter' });
+    req.flush({ access_token: fakeToken(Math.floor(Date.now() / 1000) + 3600), token_type: 'bearer', user: USER });
+    expect(navigate).toHaveBeenCalledWith('/app');
   });
 });
 
 describe('page helpers', () => {
-  it('checks that both passwords match', () => {
-    const group = new FormGroup({ password: new FormControl('Clave1234'), confirm: new FormControl('Otra12345') });
-    expect(passwordsMatch(group)).toEqual({ mismatch: true });
-    group.controls.confirm.setValue('Clave1234');
-    expect(passwordsMatch(group)).toBeNull();
+  it('keeps only the six digits of a typed or pasted code', () => {
+    expect(cleanCode('123 456')).toBe('123456');
+    expect(cleanCode('Tu código: 98-76-54')).toBe('987654');
+    expect(cleanCode('1234567')).toBe('123456');
   });
 
   it('draws the timeline of an application', () => {

@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { KeyRound, Search, Sparkles, Trash2, UserPlus } from 'lucide-angular';
+import { Search, Sparkles, Trash2, UserPlus } from 'lucide-angular';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { AiStatus, Role, User, UserUpdate } from '../../../core/models';
@@ -33,7 +33,7 @@ export class Users {
 
   private readonly ai = inject(AiService);
 
-  protected readonly i = { KeyRound, Search, Sparkles, Trash2, UserPlus };
+  protected readonly i = { Search, Sparkles, Trash2, UserPlus };
   protected readonly tones = ['avatar', 'avatar avatar--b', 'avatar avatar--g', 'avatar avatar--a'];
   protected readonly initials = initials;
   protected readonly roleBadge: Record<Role, string> = { admin: 'badge--admin', recruiter: 'badge--reclutador', candidate: 'badge--candidato' };
@@ -66,7 +66,6 @@ export class Users {
   protected readonly form = inject(NonNullableFormBuilder).group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
     role: ['recruiter' as 'admin' | 'recruiter'],
   });
 
@@ -102,8 +101,8 @@ export class Users {
       next: (user) => {
         this.saving.set(false);
         this.creating.set(false);
-        this.form.reset({ name: '', email: '', password: '', role: 'recruiter' });
-        this.toasts.ok(`Cuenta creada para ${user.name}`);
+        this.form.reset({ name: '', email: '', role: 'recruiter' });
+        this.toasts.ok(`Cuenta creada: ${user.name} entra con el código que le llegará a ${user.email}`);
         this.load();
       },
       error: (e) => {
@@ -130,16 +129,6 @@ export class Users {
 
   protected toggleActive(user: User): void {
     this.update(user, { is_active: !user.is_active }, user.is_active ? `${user.name} quedó desactivado` : `${user.name} quedó activo`);
-  }
-
-  protected resetPassword(user: User): void {
-    const password = prompt(`Nueva contraseña para ${user.name} (mínimo 8 caracteres):`);
-    if (!password) return;
-    if (password.length < 8) {
-      this.toasts.error('La contraseña debe tener al menos 8 caracteres');
-      return;
-    }
-    this.update(user, { password }, 'Contraseña actualizada');
   }
 
   protected remove(user: User): void {
