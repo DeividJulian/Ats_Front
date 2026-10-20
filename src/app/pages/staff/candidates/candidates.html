@@ -64,7 +64,7 @@
           </div>
           <div class="row t-xs t-muted" style="gap: 12px">
             <span class="chip chip--peach area-chip">{{ item.area | label: 'area' }}</span>
-            <span>{{ item.c.experience_years ? item.c.experience_years + ' años de experiencia' : 'Sin experiencia registrada' }}</span>
+            <span>{{ item.c.experience_years ? (item.c.experience_years | years) + ' de experiencia' : 'Sin experiencia registrada' }}</span>
           </div>
           <div class="chips">
             @for (s of item.c.skills.slice(0, 4); track s) { <span class="chip">{{ s }}</span> }

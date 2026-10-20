@@ -1,6 +1,7 @@
 import { passwordStrength } from '../pages/auth/register';
 import { paragraphs } from '../pages/public-job/public-job';
 import { timeAgo } from './ago.pipe';
+import { yearsLabel } from './years.pipe';
 
 describe('timeAgo', () => {
   const now = new Date('2026-10-19T12:00:00Z').getTime();
@@ -37,5 +38,13 @@ describe('form helpers', () => {
   it('splits a job text into paragraphs', () => {
     expect(paragraphs('Uno\n\n  Dos  \n')).toEqual(['Uno', 'Dos']);
     expect(paragraphs(null)).toEqual([]);
+  });
+});
+
+describe('yearsLabel', () => {
+  it('uses singular for one year', () => {
+    expect(yearsLabel(1)).toBe('1 año');
+    expect(yearsLabel(3)).toBe('3 años');
+    expect(yearsLabel(null)).toBe('0 años');
   });
 });

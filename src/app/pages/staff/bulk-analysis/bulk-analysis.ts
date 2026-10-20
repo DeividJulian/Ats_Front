@@ -12,6 +12,7 @@ import { AnalysisMode, AnalysisRun, CvAnalysisService } from '../../../core/work
 import { Icon } from '../../../shared/icon';
 import { LabelPipe } from '../../../shared/label.pipe';
 import { scoreTone } from '../../../shared/score-bar';
+import { YearsPipe } from '../../../shared/years.pipe';
 
 /** Splits pasted text into resumes: one per block separated by a line with "---". */
 export function parsePastedResumes(text: string): ResumeInput[] {
@@ -47,7 +48,7 @@ export interface RunWithFreeze extends AnalysisRun {
 
 @Component({
   selector: 'app-bulk-analysis',
-  imports: [DecimalPipe, Icon, LabelPipe],
+  imports: [DecimalPipe, Icon, LabelPipe, YearsPipe],
   templateUrl: './bulk-analysis.html',
   styleUrl: './bulk-analysis.css',
 })

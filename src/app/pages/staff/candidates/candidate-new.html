@@ -122,7 +122,7 @@
           <dt>Nombre</dt><dd>{{ p.analysis.name ?? 'No detectado' }}</dd>
           <dt>Correo</dt><dd>{{ p.analysis.email ?? 'No detectado' }}</dd>
           <dt>Teléfono</dt><dd>{{ p.analysis.phone ?? 'No detectado' }}</dd>
-          <dt>Experiencia</dt><dd>{{ p.analysis.experience_years }} años</dd>
+          <dt>Experiencia</dt><dd>{{ p.analysis.experience_years | years }}</dd>
           <dt>Educación</dt><dd>{{ p.analysis.education_level | label: 'education' }}</dd>
         </dl>
         <div class="chips">@for (s of p.analysis.skills; track s) { <span class="chip chip--match">{{ s }}</span> }</div>

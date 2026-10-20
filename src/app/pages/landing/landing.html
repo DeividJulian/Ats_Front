@@ -159,7 +159,7 @@
               <h3 class="t-h3">{{ job.title }}</h3>
               <p class="t-small t-muted clamp">{{ job.description }}</p>
               <div class="meta">
-                <span><app-icon [icon]="i.Briefcase" [size]="16" />{{ job.min_experience_years ? job.min_experience_years + ' años de experiencia' : 'Sin experiencia mínima' }}</span>
+                <span><app-icon [icon]="i.Briefcase" [size]="16" />{{ job.min_experience_years ? (job.min_experience_years | years) + ' de experiencia' : 'Sin experiencia mínima' }}</span>
                 @if (job.min_education_level) {
                   <span><app-icon [icon]="i.GraduationCap" [size]="16" />{{ job.min_education_level | label: 'education' }}</span>
                 }

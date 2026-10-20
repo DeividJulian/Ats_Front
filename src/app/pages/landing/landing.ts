@@ -28,6 +28,7 @@ import { PublicHeader } from '../../layout/public-header';
 import { AgoPipe } from '../../shared/ago.pipe';
 import { Icon } from '../../shared/icon';
 import { LabelPipe } from '../../shared/label.pipe';
+import { YearsPipe } from '../../shared/years.pipe';
 
 /** Ranking shown in the hero, to explain the product at a glance. */
 export const SAMPLE_RANKING = [
@@ -39,7 +40,7 @@ export const SAMPLE_RANKING = [
 
 @Component({
   selector: 'app-landing',
-  imports: [RouterLink, PublicHeader, LabelPipe, AgoPipe, Icon],
+  imports: [RouterLink, PublicHeader, LabelPipe, AgoPipe, Icon, YearsPipe],
   templateUrl: './landing.html',
   styleUrl: './landing.css',
 })

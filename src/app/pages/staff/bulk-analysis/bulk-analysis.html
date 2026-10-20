@@ -128,7 +128,7 @@
               <span class="avatar avatar--sm" [class]="tones[$index % tones.length]">{{ initials(res.name) }}</span>
               <div class="list__main">
                 <div class="list__title">{{ res.name }}</div>
-                <div class="list__sub ellipsis">{{ res.years }} años · {{ res.matched.join(', ') || 'sin coincidencias' }}</div>
+                <div class="list__sub ellipsis">{{ res.years | years }} · {{ res.matched.join(', ') || 'sin coincidencias' }}</div>
               </div>
               <span class="score-pill" [class]="'score-pill--' + tone(res.classification)">{{ res.score }}</span>
             </div>

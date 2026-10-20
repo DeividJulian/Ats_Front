@@ -12,6 +12,7 @@ import { AgoPipe } from '../../../shared/ago.pipe';
 import { Icon } from '../../../shared/icon';
 import { LabelPipe } from '../../../shared/label.pipe';
 import { RankingBoard } from '../ranking-board/ranking-board';
+import { YearsPipe } from '../../../shared/years.pipe';
 
 /** Readable job code, as VAC-0012. */
 export function jobCode(id: number): string {
@@ -20,7 +21,7 @@ export function jobCode(id: number): string {
 
 @Component({
   selector: 'app-job-detail',
-  imports: [RouterLink, LabelPipe, AgoPipe, Icon, RankingBoard],
+  imports: [RouterLink, LabelPipe, AgoPipe, Icon, RankingBoard, YearsPipe],
   templateUrl: './job-detail.html',
   styles: `
     .about summary { cursor: pointer; }

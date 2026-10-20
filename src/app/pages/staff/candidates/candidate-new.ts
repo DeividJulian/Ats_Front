@@ -14,11 +14,12 @@ import { Icon } from '../../../shared/icon';
 import { LabelPipe } from '../../../shared/label.pipe';
 import { Modal } from '../../../shared/modal';
 import { PdfDrop } from '../../../shared/pdf-drop';
+import { YearsPipe } from '../../../shared/years.pipe';
 
 /** Register a candidate: paste the resume, extract the profile (own NLP or AI), review and save. */
 @Component({
   selector: 'app-candidate-new',
-  imports: [ReactiveFormsModule, RouterLink, LabelPipe, Icon, Modal, PdfDrop],
+  imports: [ReactiveFormsModule, RouterLink, LabelPipe, Icon, Modal, PdfDrop, YearsPipe],
   templateUrl: './candidate-new.html',
   styles: `
     .cv { min-height: 280px; font-size: 14px; }

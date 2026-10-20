@@ -15,7 +15,7 @@
         <div class="meta">
           <span>{{ area() | label: 'area' }}</span>
           <span><app-icon [icon]="i.GraduationCap" [size]="16" />{{ job.min_education_level | label: 'education' }}</span>
-          <span><app-icon [icon]="i.Briefcase" [size]="16" />{{ job.min_experience_years ? job.min_experience_years + ' años de experiencia' : 'Sin experiencia mínima' }}</span>
+          <span><app-icon [icon]="i.Briefcase" [size]="16" />{{ job.min_experience_years ? (job.min_experience_years | years) + ' de experiencia' : 'Sin experiencia mínima' }}</span>
           <span><app-icon [icon]="i.Clock" [size]="16" />Publicada {{ (job.created_at | ago).toLowerCase() }}</span>
         </div>
       </div>

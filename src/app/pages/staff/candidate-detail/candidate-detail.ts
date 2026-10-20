@@ -17,10 +17,11 @@ import { Modal } from '../../../shared/modal';
 import { PdfDrop } from '../../../shared/pdf-drop';
 import { scoreTone } from '../../../shared/score-bar';
 import { CandidateForm } from '../candidates/candidate-form';
+import { YearsPipe } from '../../../shared/years.pipe';
 
 @Component({
   selector: 'app-candidate-detail',
-  imports: [RouterLink, LabelPipe, AgoPipe, Icon, Modal, PdfDrop, CandidateForm, InsightsCard],
+  imports: [RouterLink, LabelPipe, AgoPipe, Icon, Modal, PdfDrop, CandidateForm, InsightsCard, YearsPipe],
   templateUrl: './candidate-detail.html',
   styles: `
     .head-text { flex: 1 1 320px; min-width: 0; }

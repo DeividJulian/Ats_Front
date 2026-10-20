@@ -15,6 +15,7 @@ import { AgoPipe } from '../../../shared/ago.pipe';
 import { Icon } from '../../../shared/icon';
 import { LabelPipe } from '../../../shared/label.pipe';
 import { scoreTone } from '../../../shared/score-bar';
+import { YearsPipe } from '../../../shared/years.pipe';
 
 export interface JobWithFit {
   job: PublicJob;
@@ -35,7 +36,7 @@ type AreaFilter = 'all' | Area;
 
 @Component({
   selector: 'app-portal-jobs',
-  imports: [RouterLink, LabelPipe, AgoPipe, Icon],
+  imports: [RouterLink, LabelPipe, AgoPipe, Icon, YearsPipe],
   template: `
     <div class="page">
       <div class="page-head">
@@ -102,7 +103,7 @@ type AreaFilter = 'all' | Area;
                 }
               </div>
               <div class="meta">
-                <span><app-icon [icon]="i.Briefcase" [size]="16" />{{ item.job.min_experience_years ? item.job.min_experience_years + ' años' : 'Sin experiencia mínima' }}</span>
+                <span><app-icon [icon]="i.Briefcase" [size]="16" />{{ item.job.min_experience_years ? (item.job.min_experience_years | years) : 'Sin experiencia mínima' }}</span>
                 <span><app-icon [icon]="i.GraduationCap" [size]="16" />{{ item.job.min_education_level | label: 'education' }}</span>
                 <span><app-icon [icon]="i.Clock" [size]="16" />{{ item.job.created_at | ago }}</span>
               </div>

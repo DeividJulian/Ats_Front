@@ -13,13 +13,14 @@ import { reloadOnRemoteChanges } from '../../../core/workers/tab-sync.service';
 import { Icon } from '../../../shared/icon';
 import { LabelPipe } from '../../../shared/label.pipe';
 import { pdfProblem } from '../../../shared/pdf-drop';
+import { YearsPipe } from '../../../shared/years.pipe';
 
 type AreaFilter = 'all' | Area;
 
 /** Talent bank: search, filter by area, upload resumes and open each profile. */
 @Component({
   selector: 'app-candidates',
-  imports: [RouterLink, LabelPipe, Icon],
+  imports: [RouterLink, LabelPipe, Icon, YearsPipe],
   templateUrl: './candidates.html',
   styleUrl: './candidates.css',
 })

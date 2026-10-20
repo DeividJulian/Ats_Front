@@ -15,7 +15,7 @@
         <span class="avatar avatar--lg">{{ initials() }}</span>
         <div class="stack stack--sm head-text">
           <h1 class="t-h1">{{ c.name }}</h1>
-          <p class="t-muted">{{ (insights()?.main_area ?? 'general') | label: 'area' }} · {{ c.experience_years ? c.experience_years + ' años de experiencia' : 'Sin experiencia registrada' }} · {{ c.education_level | label: 'education' }}</p>
+          <p class="t-muted">{{ (insights()?.main_area ?? 'general') | label: 'area' }} · {{ c.experience_years ? (c.experience_years | years) + ' de experiencia' : 'Sin experiencia registrada' }} · {{ c.education_level | label: 'education' }}</p>
           <div class="meta">
             <span><app-icon [icon]="i.Mail" [size]="16" />{{ c.email }}</span>
             @if (c.phone) { <span><app-icon [icon]="i.Phone" [size]="16" />{{ c.phone }}</span> }

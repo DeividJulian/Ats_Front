@@ -11,6 +11,7 @@ import { PublicHeader } from '../../layout/public-header';
 import { AgoPipe } from '../../shared/ago.pipe';
 import { Icon } from '../../shared/icon';
 import { LabelPipe } from '../../shared/label.pipe';
+import { YearsPipe } from '../../shared/years.pipe';
 
 /** Text split into paragraphs, one per non-empty line. */
 export function paragraphs(text: string | null | undefined): string[] {
@@ -19,7 +20,7 @@ export function paragraphs(text: string | null | undefined): string[] {
 
 @Component({
   selector: 'app-public-job',
-  imports: [RouterLink, PublicHeader, LabelPipe, AgoPipe, Icon],
+  imports: [RouterLink, PublicHeader, LabelPipe, AgoPipe, Icon, YearsPipe],
   template: `
     <app-public-header />
     <main class="container page-body">
@@ -51,7 +52,7 @@ export function paragraphs(text: string | null | undefined): string[] {
                   <span class="t-label">Vacante abierta</span>
                   <h1 class="t-h1">{{ job.title }}</h1>
                   <div class="meta">
-                    <span><app-icon [icon]="i.Briefcase" [size]="16" />{{ job.min_experience_years ? job.min_experience_years + ' años de experiencia' : 'Sin experiencia mínima' }}</span>
+                    <span><app-icon [icon]="i.Briefcase" [size]="16" />{{ job.min_experience_years ? (job.min_experience_years | years) + ' de experiencia' : 'Sin experiencia mínima' }}</span>
                     <span><app-icon [icon]="i.GraduationCap" [size]="16" />{{ job.min_education_level | label: 'education' }}</span>
                     <span><app-icon [icon]="i.Clock" [size]="16" />Publicada {{ (job.created_at | ago).toLowerCase() }}</span>
                   </div>
@@ -91,7 +92,7 @@ export function paragraphs(text: string | null | undefined): string[] {
               </div>
               <div class="divider"></div>
               <div class="stack stack--sm t-small">
-                <div class="row row--between"><span class="t-muted">Experiencia</span><span class="t-strong">{{ job.min_experience_years ? job.min_experience_years + ' años' : 'No exigida' }}</span></div>
+                <div class="row row--between"><span class="t-muted">Experiencia</span><span class="t-strong">{{ job.min_experience_years ? (job.min_experience_years | years) : 'No exigida' }}</span></div>
                 <div class="row row--between"><span class="t-muted">Educación</span><span class="t-strong">{{ job.min_education_level | label: 'education' }}</span></div>
                 <div class="row row--between"><span class="t-muted">Publicada</span><span class="t-strong">{{ job.created_at | ago }}</span></div>
               </div>
