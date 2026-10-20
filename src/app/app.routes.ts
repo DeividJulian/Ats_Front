@@ -44,5 +44,5 @@ export const routes: Routes = [
     ],
   },
 
-  { path: '**', redirectTo: '' },
+  { path: '**', title: page('Página no encontrada'), loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFound) },
 ];
