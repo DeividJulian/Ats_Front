@@ -1,30 +1,16 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import {
-  Bot,
-  BriefcaseBusiness,
-  Calendar,
-  CirclePlus,
-  GraduationCap,
-  Lock,
-  LockOpen,
-  Pencil,
-  RotateCcw,
-  Search,
-  Sparkles,
-  Trash2,
-  Trophy,
-  Zap,
-} from 'lucide-angular';
+import { Briefcase, CloudOff, Files, GraduationCap, LayoutGrid, List, Lock, Plus, RotateCcw, Search, Trash2 } from 'lucide-angular';
 import { forkJoin } from 'rxjs';
 
 import { Job, JobStatus, Stats } from '../../../core/models';
 import { JobService, StatsService } from '../../../core/services/api.services';
 import { ToastService } from '../../../core/services/toast.service';
-import { areaOf, timeAgo } from '../../../core/utils/areas';
+import { areaOf } from '../../../core/utils/areas';
 import { errorMessage } from '../../../core/utils/http-error';
 import { normalize } from '../../../core/workers/cv-analysis.logic';
 import { reloadOnRemoteChanges } from '../../../core/workers/tab-sync.service';
+import { AgoPipe } from '../../../shared/ago.pipe';
 import { Icon } from '../../../shared/icon';
 import { LabelPipe } from '../../../shared/label.pipe';
 
@@ -32,7 +18,7 @@ type Filter = 'all' | JobStatus;
 
 @Component({
   selector: 'app-jobs',
-  imports: [RouterLink, LabelPipe, Icon],
+  imports: [RouterLink, LabelPipe, AgoPipe, Icon],
   templateUrl: './jobs.html',
   styleUrl: './jobs.css',
 })
@@ -41,10 +27,7 @@ export class Jobs {
   private readonly statsApi = inject(StatsService);
   private readonly toasts = inject(ToastService);
 
-  protected readonly i = {
-    Bot, BriefcaseBusiness, Calendar, CirclePlus, GraduationCap, Lock, LockOpen, Pencil, RotateCcw, Search, Sparkles,
-    Trash2, Trophy, Zap,
-  };
+  protected readonly i = { Briefcase, CloudOff, Files, GraduationCap, LayoutGrid, List, Lock, Plus, RotateCcw, Search, Trash2 };
 
   protected readonly jobs = signal<Job[]>([]);
   protected readonly stats = signal<Stats | null>(null);
@@ -57,19 +40,12 @@ export class Jobs {
     { value: 'open', label: 'Abiertas' },
     { value: 'closed', label: 'Cerradas' },
   ];
-  protected readonly timeAgo = timeAgo;
+  protected readonly view = signal<'cards' | 'table'>('cards');
   protected readonly areaOf = areaOf;
 
-  protected readonly openCount = computed(() => this.jobs().filter((j) => j.status === 'open').length);
   protected readonly applicationsById = computed(
     () => new Map((this.stats()?.per_job ?? []).map((p) => [p.job_id, p] as const)),
   );
-  /** Average fit of every application, weighted by how many each job has. */
-  protected readonly averageFit = computed(() => {
-    const perJob = this.stats()?.per_job ?? [];
-    const total = perJob.reduce((s, p) => s + p.applications, 0);
-    return total ? Math.round(perJob.reduce((s, p) => s + p.average_score * p.applications, 0) / total) : 0;
-  });
 
   protected readonly visible = computed(() => {
     const term = normalize(this.search().trim());
@@ -82,6 +58,10 @@ export class Jobs {
 
   constructor() {
     reloadOnRemoteChanges(() => this.load());
+  }
+
+  protected statsFor(jobId: number) {
+    return this.applicationsById().get(jobId);
   }
 
   protected count(filter: Filter): number {

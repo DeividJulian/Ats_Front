@@ -1,33 +1,16 @@
 import { Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import {
-  BrainCircuit,
-  CircleCheck,
-  CircleX,
-  Eye,
-  EyeOff,
-  FileText,
-  Link,
-  Mail,
-  MessageSquareText,
-  ShieldCheck,
-  Sparkles,
-  Trophy,
-  TriangleAlert,
-  UserPlus,
-  UserX,
-  Users,
-} from 'lucide-angular';
+import { Eye, EyeOff, Lightbulb, Link, Lock, Search, UserPlus, UserX, Users } from 'lucide-angular';
 
-import { AiEvaluation, AiStatus, ApplicationStatus, Candidate, Job, RankingItem, Suggestion } from '../../../core/models';
-import { AiService, ApplicationService, CandidateService, JobService } from '../../../core/services/api.services';
+import { Candidate, Job, RankingItem, Suggestion } from '../../../core/models';
+import { ApplicationService, CandidateService, JobService } from '../../../core/services/api.services';
 import { ToastService } from '../../../core/services/toast.service';
 import { errorMessage, initials } from '../../../core/utils/http-error';
-import { NEXT_STATUSES, statusLabel } from '../../../core/utils/labels';
+import { statusBadge } from '../../../core/utils/labels';
 import { TabSyncService } from '../../../core/workers/tab-sync.service';
 import { Icon } from '../../../shared/icon';
 import { LabelPipe } from '../../../shared/label.pipe';
-import { Modal } from '../../../shared/modal';
+import { scoreTone } from '../../../shared/score-bar';
 import { ApplicationReview } from '../job-detail/application-review';
 
 /** The candidate list to link: those who have not applied yet, filtered by name or email. */
@@ -41,7 +24,7 @@ export function linkableCandidates(candidates: Candidate[], applied: Set<number>
 
 @Component({
   selector: 'app-ranking-board',
-  imports: [RouterLink, LabelPipe, Icon, Modal, ApplicationReview],
+  imports: [RouterLink, LabelPipe, Icon, ApplicationReview],
   templateUrl: './ranking-board.html',
   styleUrl: './ranking-board.css',
 })
@@ -53,27 +36,27 @@ export class RankingBoard {
   private readonly jobsApi = inject(JobService);
   private readonly applications = inject(ApplicationService);
   private readonly candidatesApi = inject(CandidateService);
-  private readonly ai = inject(AiService);
   private readonly toasts = inject(ToastService);
   private readonly sync = inject(TabSyncService);
 
-  protected readonly i = {
-    BrainCircuit, CircleCheck, CircleX, Eye, EyeOff, FileText, Link, Mail, MessageSquareText, ShieldCheck, Sparkles,
-    Trophy, TriangleAlert, UserPlus, UserX, Users,
-  };
+  protected readonly i = { Eye, EyeOff, Lightbulb, Link, Lock, Search, UserPlus, UserX, Users };
+  protected readonly tones = ['avatar', 'avatar avatar--b', 'avatar avatar--g', 'avatar avatar--a'];
+  protected readonly statusBadge = statusBadge;
+  protected readonly tone = scoreTone;
 
   protected readonly ranking = signal<RankingItem[]>([]);
   protected readonly suggestions = signal<Suggestion[]>([]);
   protected readonly candidates = signal<Candidate[]>([]);
-  protected readonly aiStatus = signal<AiStatus | null>(null);
   protected readonly loading = signal(true);
   protected readonly blind = signal(false);
-  protected readonly reviewing = signal<RankingItem | null>(null);
-  protected readonly evaluations = signal<Record<number, AiEvaluation>>({});
-  protected readonly evaluating = signal<number | null>(null);
   protected readonly linkTerm = signal('');
   protected readonly linkChoice = signal<Candidate | null>(null);
   protected readonly initials = initials;
+  /** Application shown on the right; the first of the ranking until the user picks another. */
+  readonly selectedId = signal<number | null>(null);
+  protected readonly selected = computed(
+    () => this.ranking().find((r) => r.application_id === this.selectedId()) ?? this.ranking()[0] ?? null,
+  );
 
   protected readonly appliedIds = computed(() => new Set(this.ranking().map((r) => r.candidate_id)));
   protected readonly linkOptions = computed(() => linkableCandidates(this.candidates(), this.appliedIds(), this.linkTerm()));
@@ -86,7 +69,6 @@ export class RankingBoard {
       this.sync.remoteChanges();
       untracked(() => this.load());
     });
-    this.ai.status().subscribe({ next: (s) => this.aiStatus.set(s), error: () => this.aiStatus.set(null) });
     this.candidatesApi.list().subscribe({ next: (c) => this.candidates.set(c), error: () => this.candidates.set([]) });
   }
 
@@ -110,21 +92,6 @@ export class RankingBoard {
     this.load();
   }
 
-  protected nextStatuses(status: ApplicationStatus): ApplicationStatus[] {
-    return NEXT_STATUSES[status];
-  }
-
-  protected advance(item: RankingItem, status: ApplicationStatus): void {
-    this.applications.setStatus(item.application_id, status).subscribe({
-      next: () => {
-        this.toasts.ok(`${this.blind() ? `Candidato ${item.position}` : item.name}: ${statusLabel(status)}`);
-        this.load();
-        this.changed.emit();
-      },
-      error: (e) => this.toasts.error(errorMessage(e)),
-    });
-  }
-
   protected withdraw(item: RankingItem): void {
     if (!confirm('¿Retirar esta postulación de la vacante?')) return;
     this.applications.withdraw(item.application_id).subscribe({
@@ -134,25 +101,6 @@ export class RankingBoard {
         this.changed.emit();
       },
       error: (e) => this.toasts.error(errorMessage(e)),
-    });
-  }
-
-  protected evaluate(item: RankingItem): void {
-    if (this.evaluations()[item.application_id]) {
-      // Second click hides the evaluation
-      this.evaluations.update(({ [item.application_id]: _, ...rest }) => rest);
-      return;
-    }
-    this.evaluating.set(item.application_id);
-    this.ai.evaluate(item.application_id).subscribe({
-      next: (ev) => {
-        this.evaluating.set(null);
-        this.evaluations.update((all) => ({ ...all, [item.application_id]: ev }));
-      },
-      error: (e) => {
-        this.evaluating.set(null);
-        this.toasts.error(errorMessage(e));
-      },
     });
   }
 

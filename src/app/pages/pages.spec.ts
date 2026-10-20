@@ -16,6 +16,8 @@ import { jobsWithFit } from './portal/jobs/jobs';
 import { profileChecklist, profileCompleteness } from './portal/profile-completeness';
 import { parsePastedResumes } from './staff/bulk-analysis/bulk-analysis';
 import { averageScore, greetingFor } from './staff/dashboard/dashboard';
+import { recommendationTone } from './staff/job-detail/application-review';
+import { BREAKDOWN_COLUMNS, COLUMN_LABELS } from './staff/ranking/ranking';
 
 const JOB: PublicJob = {
   id: 1,
@@ -161,5 +163,12 @@ describe('page helpers', () => {
     expect(greetingFor(21)).toBe('Buenas noches');
     expect(averageScore([{ applications: 3, average_score: 80 }, { applications: 1, average_score: 40 }])).toBe(70);
     expect(averageScore([])).toBe(0);
+  });
+
+  it('colors the AI advice and names every comparison column', () => {
+    expect(recommendationTone('advance')).toBe('alto');
+    expect(recommendationTone('interview_with_reservations')).toBe('medio');
+    expect(recommendationTone('reject')).toBe('bajo');
+    expect(BREAKDOWN_COLUMNS.map((c) => COLUMN_LABELS[c])).toEqual(['Habilidades', 'Experiencia', 'Educación', 'Similitud']);
   });
 });

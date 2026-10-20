@@ -2,6 +2,7 @@ import { Component, computed, inject, input, OnInit, signal } from '@angular/cor
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { ChevronRight, CircleAlert, Sparkles, Target, TriangleAlert } from 'lucide-angular';
 
 import { AiStatus, EducationLevel, JobInput } from '../../../core/models';
 import { AiService, JobService } from '../../../core/services/api.services';
@@ -9,16 +10,18 @@ import { ToastService } from '../../../core/services/toast.service';
 import { errorMessage, splitList } from '../../../core/utils/http-error';
 import { EDUCATION_LEVELS } from '../../../core/utils/labels';
 import { canonicalizeSkills, extractSkills } from '../../../core/workers/cv-analysis.logic';
+import { Icon } from '../../../shared/icon';
 import { LabelPipe } from '../../../shared/label.pipe';
 
 @Component({
   selector: 'app-job-form',
-  imports: [ReactiveFormsModule, RouterLink, LabelPipe],
+  imports: [ReactiveFormsModule, RouterLink, LabelPipe, Icon],
   templateUrl: './job-form.html',
   styles: `
-    .layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; align-items: start; }
-    .side { display: grid; gap: 18px; position: sticky; top: 20px; }
-    @media (max-width: 960px) { .layout { grid-template-columns: 1fr; } .side { position: static; } }
+    .form-actions { justify-content: flex-end; }
+    .side { position: sticky; top: 92px; }
+    .no-skills { padding: 16px; border: 1px dashed var(--c-border-strong); border-radius: 12px; text-align: center; }
+    @media (max-width: 1100px) { .side { position: static; } }
   `,
 })
 export class JobForm implements OnInit {
@@ -30,7 +33,10 @@ export class JobForm implements OnInit {
   private readonly router = inject(Router);
   private readonly toasts = inject(ToastService);
 
+  protected readonly i = { ChevronRight, CircleAlert, Sparkles, Target, TriangleAlert };
   protected readonly levels = EDUCATION_LEVELS;
+  protected readonly tried = signal(false);
+  protected readonly fromAi = signal(false);
   protected readonly saving = signal(false);
   protected readonly loading = signal(false);
   protected readonly aiStatus = signal<AiStatus | null>(null);
@@ -46,7 +52,7 @@ export class JobForm implements OnInit {
     min_education_level: ['' as EducationLevel | ''],
   });
 
-  private readonly values = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+  protected readonly values = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
 
   protected readonly isEdit = computed(() => !!this.id());
 
@@ -56,6 +62,9 @@ export class JobForm implements OnInit {
     const v = this.values();
     return extractSkills(`${v.title ?? ''}\n${v.description ?? ''}\n${v.requirements ?? ''}`);
   });
+
+  /** What the ranking will actually use: the typed skills or, if none, the detected ones. */
+  protected readonly rankingSkills = computed(() => (this.handSkills().length ? this.handSkills() : this.detectedSkills()));
 
   ngOnInit(): void {
     this.ai.status().subscribe({ next: (s) => this.aiStatus.set(s), error: () => this.aiStatus.set(null) });
@@ -108,6 +117,7 @@ export class JobForm implements OnInit {
           min_education_level: draft.min_education_level ?? '',
         });
         this.drafting.set(false);
+        this.fromAi.set(true);
         this.toasts.ok('Borrador listo: revísalo y ajústalo antes de guardar');
       },
       error: (e) => {
@@ -118,6 +128,7 @@ export class JobForm implements OnInit {
   }
 
   protected save(): void {
+    this.tried.set(true);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;

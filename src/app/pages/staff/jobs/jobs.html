@@ -1,88 +1,114 @@
 <div class="page">
   <div class="page-head">
-    <div>
-      <h1>Gestión de vacantes</h1>
-      <p class="subtle">Publica, optimiza con IA y atrae al mejor talento.</p>
+    <div class="page-head__text">
+      <h1 class="t-h1">Vacantes</h1>
+      <p class="t-muted">Crea, cierra y revisa los postulantes de cada vacante.</p>
     </div>
-    <a class="btn primary" routerLink="/app/vacantes/nueva"><app-icon [icon]="i.CirclePlus" [size]="18" /> Nueva vacante</a>
-  </div>
-
-  <div class="grid summary">
-    <div class="card tint mini">
-      <span class="icon-tile plain"><app-icon [icon]="i.BriefcaseBusiness" [size]="22" /></span>
-      <div><strong>{{ openCount() }} activas</strong><span class="small subtle">De {{ jobs().length }} en total</span></div>
-    </div>
-    <div class="card tint mini">
-      <span class="icon-tile ai"><app-icon [icon]="i.Sparkles" [size]="22" /></span>
-      <div><strong class="purple">{{ averageFit() }}% ajuste</strong><span class="small subtle">Promedio de las postulaciones</span></div>
+    <div class="row">
+      <div class="seg hide-m" role="group" aria-label="Vista">
+        <button type="button" class="seg__btn" [class.is-active]="view() === 'cards'" [attr.aria-pressed]="view() === 'cards'" (click)="view.set('cards')"><app-icon [icon]="i.LayoutGrid" [size]="16" />Tarjetas</button>
+        <button type="button" class="seg__btn" [class.is-active]="view() === 'table'" [attr.aria-pressed]="view() === 'table'" (click)="view.set('table')"><app-icon [icon]="i.List" [size]="16" />Tabla</button>
+      </div>
+      <a class="btn btn--primary show-m" routerLink="/app/vacantes/nueva"><app-icon [icon]="i.Plus" [size]="18" />Nueva vacante</a>
     </div>
   </div>
 
-  <div class="row">
-    <h2>Listado de vacantes</h2>
-    <span class="spacer"></span>
-    <div class="seg">
-      @for (f of filters; track f.value) {
-        <button type="button" [class.active]="filter() === f.value" (click)="filter.set(f.value)">{{ f.label }} ({{ count(f.value) }})</button>
-      }
-    </div>
+  <div class="toolbar">
+    <span class="control control--icon">
+      <app-icon [icon]="i.Search" [size]="20" />
+      <input class="input" type="search" placeholder="Buscar por cargo o habilidad" aria-label="Buscar vacante" (input)="search.set($any($event.target).value)" />
+    </span>
   </div>
-  <div class="search-box">
-    <app-icon [icon]="i.Search" />
-    <input type="search" placeholder="Buscar por cargo o habilidad…" aria-label="Buscar vacante" (input)="search.set($any($event.target).value)" />
+
+  <div class="tabs" role="tablist" aria-label="Estado">
+    @for (f of filters; track f.value) {
+      <button type="button" class="tab" role="tab" [class.is-active]="filter() === f.value" [attr.aria-selected]="filter() === f.value" (click)="filter.set(f.value)">
+        {{ f.label }} <span class="count">{{ count(f.value) }}</span>
+      </button>
+    }
   </div>
 
   @if (loading()) {
-    <div class="card stack"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+    <div class="grid-3">@for (n of [1, 2, 3]; track n) { <div class="card stack"><span class="skeleton sk-line" style="width: 30%"></span><span class="skeleton sk-title"></span><span class="skeleton sk-block"></span></div> }</div>
   } @else if (error()) {
-    <div class="empty"><strong>{{ error() }}</strong><button type="button" class="btn small" (click)="load()">Reintentar</button></div>
-  } @else if (visible().length === 0) {
-    <div class="empty">
-      <span class="icon-tile"><app-icon [icon]="i.BriefcaseBusiness" [size]="24" /></span>
-      <strong>{{ jobs().length ? 'Ninguna vacante coincide' : 'Todavía no tienes vacantes' }}</strong>
-      @if (!jobs().length) { <a class="btn primary small" routerLink="/app/vacantes/nueva">Crear la primera</a> }
+    <div class="card empty">
+      <span class="empty__icon empty__icon--danger"><app-icon [icon]="i.CloudOff" [size]="32" /></span>
+      <p class="empty__title">No pudimos cargar las vacantes</p>
+      <p class="empty__text">{{ error() }}</p>
+      <button type="button" class="btn btn--secondary" (click)="load()">Reintentar</button>
     </div>
-  } @else {
-    <div class="list">
+  } @else if (visible().length === 0) {
+    <div class="card empty">
+      <span class="empty__icon"><app-icon [icon]="i.Briefcase" [size]="32" /></span>
+      <p class="empty__title">{{ jobs().length ? 'Ninguna vacante coincide' : 'Todavía no tienes vacantes' }}</p>
+      <p class="empty__text">{{ jobs().length ? 'Prueba con otra palabra o cambia el estado.' : 'Publica la primera y el sistema empezará a ordenar a los candidatos.' }}</p>
+      @if (!jobs().length) { <a class="btn btn--primary" routerLink="/app/vacantes/nueva">Crear la primera</a> }
+    </div>
+  } @else if (view() === 'cards') {
+    <div class="grid-3">
       @for (job of visible(); track job.id) {
-        <article class="card job" [class.closed]="job.status === 'closed'">
-          <div class="body">
-            <div class="row meta">
-              <span class="chip">{{ areaOf(job.required_skills) | label: 'area' }}</span>
-              <span class="small subtle when"><app-icon [icon]="i.Calendar" [size]="14" /> {{ timeAgo(job.created_at) }}</span>
-              <span class="spacer"></span>
-              <span class="badge dot" [class]="job.status === 'open' ? 'new' : 'closed'">{{ job.status | label: 'jobStatus' }}</span>
-            </div>
-            <a class="title" [routerLink]="['/app/vacantes', job.id]">{{ job.title }}</a>
-            <span class="small subtle place"><app-icon [icon]="i.GraduationCap" [size]="15" /> {{ job.min_education_level | label: 'education' }} · {{ job.min_experience_years ? job.min_experience_years + ' años de experiencia' : 'Sin experiencia mínima' }}</span>
-            <div class="chips">
-              @for (skill of job.required_skills.slice(0, 6); track skill) { <span class="chip outline">{{ skill }}</span> }
-              @if (job.required_skills.length > 6) { <span class="chip outline">+{{ job.required_skills.length - 6 }}</span> }
-              <span class="chip ai"><app-icon [icon]="i.Zap" [size]="13" /> {{ applicationsById().get(job.id)?.applications ?? 0 }} candidatos</span>
-            </div>
+        <article class="card stack stack--sm" [class.closed]="job.status === 'closed'">
+          <div class="row row--between">
+            <span class="badge badge--dot" [class]="job.status === 'open' ? 'badge--abierta' : 'badge--cerrada'">{{ job.status | label: 'jobStatus' }}</span>
+            <span class="t-xs t-muted">{{ job.created_at | ago }}</span>
           </div>
-          <div class="actions">
-            <a class="btn small peach" [routerLink]="['/app/vacantes', job.id]"><app-icon [icon]="i.Trophy" [size]="16" /> Ranking</a>
-            <a class="btn small soft" [routerLink]="['/app/vacantes', job.id, 'editar']"><app-icon [icon]="i.Pencil" [size]="15" /> Editar</a>
+          <h2 class="t-h3"><a class="title-link" [routerLink]="['/app/vacantes', job.id]">{{ job.title }}</a></h2>
+          <div class="meta">
+            <span>{{ areaOf(job.required_skills) | label: 'area' }}</span>
+            <span><app-icon [icon]="i.GraduationCap" [size]="16" />{{ job.min_education_level | label: 'education' }}</span>
+          </div>
+          <div class="row numbers">
+            <div><p class="t-xs t-muted">Postulantes</p><p class="t-h2 t-num">{{ statsFor(job.id)?.applications ?? 0 }}</p></div>
+            <div><p class="t-xs t-muted">Promedio</p><p class="t-h2 t-num">{{ statsFor(job.id)?.average_score ?? '–' }}</p></div>
+            <div><p class="t-xs t-muted">Máximo</p><p class="t-h2 t-num">{{ statsFor(job.id)?.max_score ?? '–' }}</p></div>
+          </div>
+          <div class="card__foot">
+            <a class="btn btn--secondary btn--sm" [routerLink]="['/app/vacantes', job.id]">Ver postulantes</a>
+            <a class="btn btn--ghost btn--sm" [routerLink]="['/app/vacantes', job.id, 'editar']">Editar</a>
             <span class="spacer"></span>
-            <button type="button" class="btn small soft icon-only" [title]="job.status === 'open' ? 'Cerrar vacante' : 'Reabrir vacante'" [attr.aria-label]="job.status === 'open' ? 'Cerrar vacante' : 'Reabrir vacante'" (click)="toggle(job)">
-              <app-icon [icon]="job.status === 'open' ? i.Lock : i.RotateCcw" [size]="16" />
+            <button type="button" class="btn btn--ghost btn--icon btn--sm" [title]="job.status === 'open' ? 'Cerrar vacante' : 'Reabrir vacante'" [attr.aria-label]="job.status === 'open' ? 'Cerrar vacante' : 'Reabrir vacante'" (click)="toggle(job)">
+              <app-icon [icon]="job.status === 'open' ? i.Lock : i.RotateCcw" [size]="18" />
             </button>
-            <button type="button" class="btn small danger-soft icon-only" title="Eliminar" aria-label="Eliminar vacante" (click)="remove(job)">
-              <app-icon [icon]="i.Trash2" [size]="16" />
+            <button type="button" class="btn btn--danger-ghost btn--icon btn--sm" title="Eliminar" aria-label="Eliminar vacante" (click)="remove(job)">
+              <app-icon [icon]="i.Trash2" [size]="18" />
             </button>
           </div>
         </article>
       }
     </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Vacante</th><th>Estado</th><th class="num">Postulantes</th><th class="num">Promedio</th><th>Publicada</th><th class="actions">Acciones</th></tr>
+        </thead>
+        <tbody>
+          @for (job of visible(); track job.id) {
+            <tr>
+              <td><a class="t-strong title-link" [routerLink]="['/app/vacantes', job.id]">{{ job.title }}</a><div class="t-xs t-muted">{{ areaOf(job.required_skills) | label: 'area' }}</div></td>
+              <td><span class="badge badge--dot" [class]="job.status === 'open' ? 'badge--abierta' : 'badge--cerrada'">{{ job.status | label: 'jobStatus' }}</span></td>
+              <td class="num t-strong">{{ statsFor(job.id)?.applications ?? 0 }}</td>
+              <td class="num">{{ statsFor(job.id)?.average_score ?? '–' }}</td>
+              <td class="t-muted">{{ job.created_at | ago }}</td>
+              <td class="actions">
+                <a class="btn btn--ghost btn--sm" [routerLink]="['/app/vacantes', job.id]">Ver</a>
+                <a class="btn btn--ghost btn--sm" [routerLink]="['/app/vacantes', job.id, 'editar']">Editar</a>
+                <button type="button" class="btn btn--ghost btn--sm" (click)="toggle(job)">{{ job.status === 'open' ? 'Cerrar' : 'Reabrir' }}</button>
+                <button type="button" class="btn btn--danger-ghost btn--icon btn--sm" aria-label="Eliminar vacante" (click)="remove(job)"><app-icon [icon]="i.Trash2" [size]="18" /></button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   }
 
-  <div class="card tint worker-cta">
-    <span class="icon-tile ai"><app-icon [icon]="i.Bot" [size]="22" /></span>
-    <div class="stack" style="gap: 2px; flex: 1; min-width: 0">
-      <strong>¿Procesar hojas de vida en lote?</strong>
-      <span class="small subtle">El Web Worker califica miles de candidatos sin congelar la pantalla.</span>
+  <div class="card card--flat row row--nowrap worker-cta">
+    <span class="kpi__icon"><app-icon [icon]="i.Files" [size]="20" /></span>
+    <div class="list__main">
+      <div class="t-strong">¿Muchas hojas de vida a la vez?</div>
+      <div class="t-small t-muted">El análisis masivo las califica en segundo plano sin congelar la pantalla.</div>
     </div>
-    <a class="btn ai small" routerLink="/app/analisis">Ir al Worker</a>
+    <a class="btn btn--secondary btn--sm" routerLink="/app/analisis">Análisis masivo</a>
   </div>
 </div>

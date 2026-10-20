@@ -1,0 +1,117 @@
+<div class="page">
+  <div class="page-head">
+    <div class="page-head__text">
+      <h1 class="t-h1">Ranking</h1>
+      <p class="t-muted">Compara a los mejores candidatos de una vacante, lado a lado.</p>
+    </div>
+    @if (jobs().length) {
+      <div class="row">
+        <span class="control picker">
+          <label class="sr-only" for="rk-job">Vacante</label>
+          <select class="select" id="rk-job" (change)="choose(+$any($event.target).value)">
+            @for (job of jobs(); track job.id) {
+              <option [value]="job.id" [selected]="job.id === selectedId()">{{ job.title }} · {{ job.status | label: 'jobStatus' }}</option>
+            }
+          </select>
+        </span>
+        <button type="button" class="btn" [class.btn--ia-soft]="blind()" [class.btn--secondary]="!blind()" [attr.aria-pressed]="blind()" (click)="toggleBlind()" title="Oculta nombres y correos">
+          <app-icon [icon]="i.EyeOff" [size]="18" />{{ blind() ? 'Anónimo' : 'Modo anónimo' }}
+        </button>
+        <button type="button" class="btn btn--ia" [class.is-loading]="batchRunning()" [disabled]="!aiStatus()?.configured || batchRunning() || !ranking().length" (click)="evaluateTop()">
+          @if (batchRunning()) { <span class="spinner"></span>Evaluando… } @else { <app-icon [icon]="i.Sparkles" [size]="18" />Evaluar top {{ batch }} con IA }
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (aiStatus() && !aiStatus()?.configured) {
+    <div class="alert alert--warning" role="status">
+      <app-icon [icon]="i.TriangleAlert" [size]="20" />
+      <div class="alert__body"><div class="alert__title">La IA no está configurada</div>El ranking funciona igual con el puntaje del sistema. Para usar “Evaluar con IA”, agrega la variable <code>AI_API_KEY</code> en el servidor.</div>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="grid-3">@for (n of [1, 2, 3]; track n) { <div class="card stack"><span class="skeleton sk-title"></span><span class="skeleton sk-line"></span></div> }</div>
+  } @else if (error()) {
+    <div class="card empty">
+      <span class="empty__icon empty__icon--danger"><app-icon [icon]="i.TriangleAlert" [size]="32" /></span>
+      <p class="empty__title">No pudimos cargar las vacantes</p>
+      <p class="empty__text">{{ error() }}</p>
+    </div>
+  } @else if (jobs().length === 0) {
+    <div class="card empty">
+      <span class="empty__icon"><app-icon [icon]="i.ListOrdered" [size]="32" /></span>
+      <p class="empty__title">Todavía no hay vacantes</p>
+      <p class="empty__text">Crea una vacante y aquí verás a sus candidatos ordenados por ajuste.</p>
+      <a class="btn btn--primary" routerLink="/app/vacantes/nueva">Crear vacante</a>
+    </div>
+  } @else if (loadingRanking() && !ranking().length) {
+    <div class="grid-3">@for (n of [1, 2, 3]; track n) { <div class="card stack"><span class="skeleton sk-title"></span><span class="skeleton sk-line"></span></div> }</div>
+  } @else if (ranking().length === 0) {
+    <div class="card empty">
+      <span class="empty__icon"><app-icon [icon]="i.ListOrdered" [size]="32" /></span>
+      <p class="empty__title">Esta vacante aún no tiene postulaciones</p>
+      <p class="empty__text">Vincula candidatos desde el detalle de la vacante.</p>
+      <a class="btn btn--secondary" [routerLink]="['/app/vacantes', selectedId()]">Ir a la vacante</a>
+    </div>
+  } @else {
+    <div class="grid-3 podium">
+      @for (c of podium(); track c.application_id) {
+        <a class="card card--link stack stack--sm" [class.first]="c.position === 1" [routerLink]="['/app/vacantes', selectedId()]">
+          <div class="row row--nowrap">
+            <span class="step-card__num">{{ c.position }}</span>
+            <span class="avatar" [class]="tones[(c.position - 1) % tones.length]">{{ blind() ? '#' + c.position : initials(c.name) }}</span>
+            <div class="list__main"><div class="list__title">{{ c.name }}</div><div class="list__sub">{{ c.matching_skills.length }} habilidades coinciden</div></div>
+          </div>
+          <div class="score" [class]="'score--' + tone(c.classification)">
+            <div class="score__top"><span class="score__value">{{ c.score }}<small>/100</small></span><span class="badge" [class]="'badge--' + tone(c.classification)">{{ c.classification | label: 'classification' }}</span></div>
+            <div class="score__track"><div class="score__fill" [style.width.%]="c.score"></div></div>
+          </div>
+        </a>
+      }
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>#</th><th>Candidato</th><th class="num">Puntaje</th>
+            @for (col of columns; track col) { <th class="num">{{ columnLabels[col] }}</th> }
+            <th>Estado</th><th>IA asesora</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of ranking(); track c.application_id) {
+            <tr>
+              <td class="t-muted t-num">{{ c.position }}</td>
+              <td>
+                <a class="cell-user user-link" [routerLink]="blind() ? ['/app/vacantes', selectedId()] : ['/app/candidatos', c.candidate_id]">
+                  <span class="avatar avatar--sm" [class]="tones[(c.position - 1) % tones.length]">{{ blind() ? '#' + c.position : initials(c.name) }}</span>
+                  <div><div class="t-strong">{{ c.name }}</div><div class="t-xs t-muted">{{ blind() ? 'Datos ocultos' : c.email }}</div></div>
+                </a>
+              </td>
+              <td class="num"><span class="score-pill" [class]="'score-pill--' + tone(c.classification)">{{ c.score }}</span></td>
+              @for (col of columns; track col) {
+                <td class="num">
+                  @if (details()[c.application_id]) { {{ part(c.application_id, col) ?? '—' }} } @else { <span class="skeleton sk-line" style="width: 32px; display: inline-block"></span> }
+                </td>
+              }
+              <td><span [class]="statusBadge(c.status)">{{ c.status | label: 'status' }}</span></td>
+              <td>
+                @if (evaluations()[c.application_id]; as ev) {
+                  <span class="badge" [class]="'badge--' + recTone(ev.recommendation)"><app-icon [icon]="i.Sparkles" [size]="14" />{{ ev.recommendation | label: 'recommendation' }}</span>
+                } @else if (evaluatingId() === c.application_id) {
+                  <span class="row t-small t-ia" style="gap: 6px"><span class="spinner"></span>Evaluando…</span>
+                } @else {
+                  <span class="t-small t-muted">Sin evaluar</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="t-xs t-muted">La columna de IA es una opinión aparte: el orden siempre lo da el puntaje del sistema. Abre la vacante para ver el detalle de cada evaluación.</p>
+  }
+</div>

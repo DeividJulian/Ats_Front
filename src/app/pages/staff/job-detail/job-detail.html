@@ -1,0 +1,48 @@
+<div class="page">
+  @if (loading()) {
+    <div class="card stack"><span class="skeleton sk-title"></span><span class="skeleton sk-line"></span></div>
+  } @else if (error()) {
+    <div class="card empty">
+      <span class="empty__icon empty__icon--danger"><app-icon [icon]="i.TriangleAlert" [size]="32" /></span>
+      <p class="empty__title">{{ error() }}</p>
+      <a class="btn btn--secondary" routerLink="/app/vacantes">Volver a vacantes</a>
+    </div>
+  } @else if (job(); as job) {
+    <div class="page-head">
+      <div class="page-head__text">
+        <nav class="crumbs" aria-label="Ruta"><a routerLink="/app/vacantes">Vacantes</a><app-icon [icon]="i.ChevronRight" [size]="14" /><span>{{ code() }}</span></nav>
+        <div class="row"><h1 class="t-h1">{{ job.title }}</h1><span class="badge badge--dot" [class]="job.status === 'open' ? 'badge--abierta' : 'badge--cerrada'">{{ job.status | label: 'jobStatus' }}</span></div>
+        <div class="meta">
+          <span>{{ area() | label: 'area' }}</span>
+          <span><app-icon [icon]="i.GraduationCap" [size]="16" />{{ job.min_education_level | label: 'education' }}</span>
+          <span><app-icon [icon]="i.Briefcase" [size]="16" />{{ job.min_experience_years ? job.min_experience_years + ' años de experiencia' : 'Sin experiencia mínima' }}</span>
+          <span><app-icon [icon]="i.Clock" [size]="16" />Publicada {{ (job.created_at | ago).toLowerCase() }}</span>
+        </div>
+      </div>
+      <div class="row">
+        <a class="btn btn--secondary" [routerLink]="['/app/vacantes', job.id, 'editar']"><app-icon [icon]="i.Pencil" [size]="18" />Editar</a>
+        <button type="button" class="btn btn--secondary" [class.is-loading]="recalculating()" [disabled]="recalculating()" (click)="recalculate()" title="Vuelve a calcular el puntaje de todas las postulaciones">
+          @if (recalculating()) { <span class="spinner"></span>Recalculando… } @else { <app-icon [icon]="i.RefreshCw" [size]="18" />Recalcular }
+        </button>
+        <a class="btn btn--secondary hide-m" routerLink="/app/ranking" [queryParams]="{ vacante: job.id }">Ver ranking</a>
+        @if (job.status === 'open') {
+          <a class="btn btn--ghost hide-m" [routerLink]="['/empleos', job.id]" target="_blank"><app-icon [icon]="i.ExternalLink" [size]="18" />Como candidato</a>
+        }
+        <button type="button" [class]="job.status === 'open' ? 'btn btn--danger-ghost' : 'btn btn--secondary'" (click)="toggleStatus(job)">
+          <app-icon [icon]="job.status === 'open' ? i.Lock : i.RotateCcw" [size]="18" />{{ job.status === 'open' ? 'Cerrar vacante' : 'Reabrir' }}
+        </button>
+      </div>
+    </div>
+
+    <details class="card card--flat about">
+      <summary class="t-strong">Descripción y requisitos de la vacante</summary>
+      <div class="stack about-body">
+        <p class="pre">{{ job.description }}</p>
+        @if (job.requirements) { <p class="t-label">Requisitos</p><p class="pre">{{ job.requirements }}</p> }
+        <div class="chips">@for (s of job.required_skills; track s) { <span class="chip chip--peach">{{ s }}</span> }</div>
+      </div>
+    </details>
+
+    <app-ranking-board [job]="job" />
+  }
+</div>
