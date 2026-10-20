@@ -1,183 +1,87 @@
 <div class="page">
-  <div class="card tint directory-head">
-    <div class="stack" style="gap: 6px; flex: 1; min-width: 220px">
-      <div class="row">
-        <span class="live-label"><span class="dot"></span> Directorio activo</span>
-        @if (aiStatus()?.configured) { <span class="badge ai"><app-icon [icon]="i.Zap" [size]="13" /> {{ aiStatus()?.model }}</span> }
-      </div>
-      <h1>Gestión de talento</h1>
-      <span class="subtle small">Acelera la contratación de tu equipo con perfiles extraídos automáticamente.</span>
+  <div class="page-head">
+    <div class="page-head__text">
+      <h1 class="t-h1">Candidatos</h1>
+      <p class="t-muted">Tu banco de hojas de vida, listo para cualquier vacante.</p>
     </div>
-    <div class="kpis">
-      <div><strong>{{ candidates().length }}</strong><span>Totales</span></div>
-      <div><strong class="purple">{{ withResume() }}</strong><span>Con hoja de vida</span></div>
+    <div class="row">
+      <a class="btn btn--secondary" routerLink="/app/analisis"><app-icon [icon]="i.Files" [size]="18" />Carga masiva</a>
+      <a class="btn btn--primary" routerLink="/app/candidatos/nuevo"><app-icon [icon]="i.UserPlus" [size]="18" />Registrar candidato</a>
     </div>
   </div>
 
-  <div class="card new-card">
-    <button type="button" class="new-head" (click)="formOpen.set(!formOpen())" [attr.aria-expanded]="formOpen()">
-      <span class="icon-tile"><app-icon [icon]="i.UserPlus" [size]="20" /></span>
-      <span class="stack" style="gap: 0; flex: 1; text-align: left">
-        <strong class="title">Nuevo candidato</strong>
-        <span class="small subtle">Ingreso manual o extracción asistida</span>
-      </span>
-      <span class="toggle"><app-icon [icon]="formOpen() ? i.ChevronUp : i.ChevronDown" [size]="18" /></span>
-    </button>
-
-    @if (formOpen()) {
-      <form class="form" [formGroup]="form" (ngSubmit)="save()" novalidate>
-        <label>
-          <span class="row"><span>Texto de la hoja de vida</span><span class="spacer"></span><button type="button" class="btn link small" (click)="pdfOpen.set(true)"><app-icon [icon]="i.CloudUpload" [size]="15" /> o súbela en PDF</button></span>
-          <textarea formControlName="resume_text" rows="5" placeholder="Pega aquí la hoja de vida: nombre, contacto, experiencia, estudios y herramientas…"></textarea>
-        </label>
-
-        <div class="assistant">
-          <div class="row">
-            <span class="icon-tile ai"><app-icon [icon]="i.BrainCircuit" [size]="20" /></span>
-            <div class="stack" style="gap: 0; flex: 1">
-              <strong>Asistente de perfiles</strong>
-              <span class="small">Analizador semántico para pymes</span>
-            </div>
-            @if (aiStatus()?.configured) { <span class="badge">{{ aiStatus()?.provider | label: 'aiProvider' }}</span> }
-          </div>
-          <p class="small">Extrae al instante nombre, contacto, habilidades, años de experiencia y nivel educativo. Ahorra minutos en cada postulación.</p>
-          <div class="row">
-            <button type="button" class="btn ai" [disabled]="extracting() !== null" (click)="extract()">
-              @if (extracting() === 'text') { <span class="spinner"></span> Extrayendo… } @else { <app-icon [icon]="i.Sparkles" [size]="16" /> Extraer perfil }
-            </button>
-            @if (aiStatus()?.configured) {
-              <button type="button" class="btn outline" [disabled]="extracting() !== null" (click)="extractWithAi()">
-                @if (extracting() === 'ai') { <span class="spinner"></span> {{ aiStatus()?.provider | label: 'aiProvider' }} está leyendo… } @else { Refinar con {{ aiStatus()?.provider | label: 'aiProvider' }} }
-              </button>
-            }
-          </div>
-          @if (aiSummary()) { <p class="small summary">“{{ aiSummary() }}”</p> }
-        </div>
-
-        <div class="two">
-          <label>Nombre completo
-            <span class="with-icon"><app-icon [icon]="i.User" [size]="16" /><input formControlName="name" autocomplete="off" [class.invalid]="invalid('name')" /></span>
-            @if (invalid('name')) { <span class="error-text">Escribe el nombre (mínimo 2 letras)</span> }
-          </label>
-          <label>Correo electrónico
-            <span class="with-icon"><app-icon [icon]="i.Mail" [size]="16" /><input type="email" formControlName="email" autocomplete="off" [class.invalid]="invalid('email')" /></span>
-            @if (invalid('email')) { <span class="error-text">Correo no válido</span> }
-          </label>
-          <label>Teléfono de contacto
-            <span class="with-icon"><app-icon [icon]="i.Phone" [size]="16" /><input type="tel" formControlName="phone" autocomplete="off" /></span>
-          </label>
-          <label>Experiencia laboral
-            <span class="with-icon"><app-icon [icon]="i.Timer" [size]="16" /><input type="number" min="0" max="45" formControlName="experience_years" placeholder="Años (vacío: se detecta)" /></span>
-          </label>
-          <label>Nivel educativo
-            <span class="with-icon"><app-icon [icon]="i.GraduationCap" [size]="16" />
-              <select formControlName="education_level">
-                <option value="">Detectar de la hoja de vida</option>
-                @for (l of levels; track l.value) { <option [value]="l.value">{{ l.label }}</option> }
-              </select>
-            </span>
-          </label>
-        </div>
-
-        <div class="stack" style="gap: 8px">
-          <span class="row small"><strong>Habilidades detectadas</strong><span class="spacer"></span><span class="subtle">Toca una para quitarla</span></span>
-          <div class="skills-box">
-            @for (s of skills(); track s) {
-              <button type="button" class="skill" (click)="removeSkill(s)" [attr.aria-label]="'Quitar ' + s"><span class="dot"></span>{{ s }} <app-icon [icon]="i.X" [size]="13" /></button>
-            }
-            <span class="add">
-              <input placeholder="Añadir…" [value]="newSkill()" (input)="newSkill.set($any($event.target).value)" (keydown.enter)="$event.preventDefault(); addSkill()" aria-label="Añadir habilidad" />
-              <button type="button" class="btn small ghost icon-only" (click)="addSkill()" aria-label="Añadir habilidad"><app-icon [icon]="i.Plus" [size]="15" /></button>
-            </span>
-          </div>
-        </div>
-
-        <div class="row actions">
-          <button type="submit" class="btn primary large grow" [disabled]="saving()"><app-icon [icon]="i.Save" [size]="18" /> {{ saving() ? 'Guardando…' : 'Guardar candidato' }}</button>
-          <button type="button" class="btn soft large" (click)="clear()">Limpiar</button>
-        </div>
-      </form>
-    }
+  <div class="toolbar">
+    <span class="control control--icon">
+      <app-icon [icon]="i.Search" [size]="20" />
+      <input class="input" type="search" placeholder="Nombre, correo o habilidad (ej. Power BI)" aria-label="Buscar candidatos" (input)="search.set($any($event.target).value)" />
+    </span>
+    <span class="t-small t-muted" aria-live="polite">{{ visible().length }} resultados · {{ withResume() }} con hoja de vida</span>
   </div>
 
-  <div class="row">
-    <h2>Directorio de candidatos</h2>
-    <span class="badge">{{ visible().length }} visibles</span>
-  </div>
-  <div class="search-box">
-    <app-icon [icon]="i.Search" />
-    <input type="search" placeholder="Buscar por nombre, correo o habilidad (ej. Power BI)…" aria-label="Buscar candidato" (input)="search.set($any($event.target).value)" />
-  </div>
-  <div class="filters">
-    @for (f of areaFilters(); track f.value) {
-      <button type="button" [class.active]="area() === f.value" (click)="area.set(f.value)">{{ f.label }} ({{ f.count }})</button>
-    }
-  </div>
-
-  @if (loading()) {
-    <div class="card stack"><div class="skeleton"></div><div class="skeleton"></div></div>
-  } @else if (error()) {
-    <div class="empty"><strong>{{ error() }}</strong><button type="button" class="btn small" (click)="load()">Reintentar</button></div>
-  } @else if (visible().length === 0) {
-    <div class="empty"><strong>{{ candidates().length ? 'Ningún candidato coincide' : 'Aún no hay candidatos' }}</strong></div>
-  } @else {
-    <div class="directory">
-      @for (item of visible(); track item.c.id; let n = $index) {
-        <article class="card person-card">
-          <div class="row top">
-            <span class="avatar" [class]="'c' + ((n % 4) + 1)">{{ initials(item.c.name) }}</span>
-            <div class="stack" style="gap: 2px; flex: 1; min-width: 0">
-              <a class="name" [routerLink]="['/app/candidatos', item.c.id]">{{ item.c.name }}</a>
-              <span class="small subtle meta">{{ item.area | label: 'area' }} · <app-icon [icon]="i.Timer" [size]="13" /> {{ item.c.experience_years }} años exp · {{ item.c.education_level | label: 'education' }}</span>
-            </div>
-            <span class="badge ai"><app-icon [icon]="i.Zap" [size]="13" /> {{ item.c.skills.length }}</span>
-          </div>
-          <div class="chips">
-            @for (s of item.c.skills.slice(0, 4); track s) { <span class="chip">{{ s }}</span> }
-            @if (item.c.skills.length > 4) { <span class="chip outline">+{{ item.c.skills.length - 4 }} más</span> }
-          </div>
-          <div class="row">
-            <label class="btn small outline upload" [class.busy]="uploadingFor() === item.c.id">
-              <input type="file" accept="application/pdf,.pdf" (change)="uploadFor(item.c, $event)" [disabled]="uploadingFor() === item.c.id" />
-              @if (uploadingFor() === item.c.id) { <span class="spinner"></span> Leyendo… } @else { <app-icon [icon]="i.CloudUpload" [size]="15" /> {{ item.c.resume_text ? 'Actualizar CV' : 'Subir CV en PDF' }} }
-            </label>
-            <span class="spacer"></span>
-            <a class="btn small soft icon-only" [routerLink]="['/app/candidatos', item.c.id]" title="Ver y editar" aria-label="Ver y editar"><app-icon [icon]="i.Pencil" [size]="15" /></a>
-            <button type="button" class="btn small danger-soft icon-only" title="Eliminar" aria-label="Eliminar candidato" (click)="remove(item.c)"><app-icon [icon]="i.Trash2" [size]="15" /></button>
-          </div>
-        </article>
+  @if (areaFilters().length > 2) {
+    <div class="chips" role="group" aria-label="Área profesional">
+      @for (f of areaFilters(); track f.value) {
+        <button type="button" class="filter" [class.is-active]="area() === f.value" [attr.aria-pressed]="area() === f.value" (click)="area.set(f.value)">
+          {{ f.label }} <span class="count">{{ f.count }}</span>
+        </button>
       }
     </div>
   }
 
-  <div class="notice peach tip">
-    <app-icon [icon]="i.Lightbulb" [size]="20" />
-    <span><strong>Consejo:</strong> sube el PDF de la hoja de vida desde cada tarjeta para actualizar habilidades y experiencia sin escribir nada.</span>
-  </div>
-
-  @if (pdfOpen()) {
-    <app-modal title="Nuevo candidato desde su hoja de vida" (closed)="pdfOpen.set(false); preview.set(null)">
-      @if (preview(); as p) {
-        <div class="notice good">Esto encontramos en <strong>{{ p.file.name }}</strong>. Revisa y confirma.</div>
-        <dl class="dl">
-          <dt>Nombre</dt><dd>{{ p.analysis.name ?? 'No detectado' }}</dd>
-          <dt>Correo</dt><dd>{{ p.analysis.email ?? 'No detectado' }}</dd>
-          <dt>Teléfono</dt><dd>{{ p.analysis.phone ?? 'No detectado' }}</dd>
-          <dt>Experiencia</dt><dd>{{ p.analysis.experience_years }} años</dd>
-          <dt>Educación</dt><dd>{{ p.analysis.education_level | label: 'education' }}</dd>
-        </dl>
-        <div class="chips">@for (s of p.analysis.skills; track s) { <span class="chip good">{{ s }}</span> }</div>
-        @if (!p.analysis.email || !p.analysis.name) {
-          <div class="notice warn">No se detectó {{ !p.analysis.email ? 'el correo' : 'el nombre' }}. Pega el texto en el formulario y complétalo a mano.</div>
-        }
-        <div class="row">
-          <button type="button" class="btn primary" [disabled]="reading() || !p.analysis.email || !p.analysis.name" (click)="confirmPdf()">{{ reading() ? 'Creando…' : 'Crear candidato' }}</button>
-          <button type="button" class="btn ghost" (click)="preview.set(null)">Elegir otro PDF</button>
+  @if (loading()) {
+    <div class="grid-3" aria-busy="true" aria-label="Cargando candidatos">
+      @for (n of [1, 2, 3, 4, 5, 6]; track n) {
+        <div class="card stack">
+          <div class="row row--nowrap"><span class="skeleton sk-avatar"></span><div class="stack stack--sm" style="flex: 1"><span class="skeleton sk-line" style="width: 70%"></span><span class="skeleton sk-line" style="width: 45%"></span></div></div>
+          <div class="row"><span class="skeleton sk-chip"></span><span class="skeleton sk-chip"></span><span class="skeleton sk-chip"></span></div>
         </div>
-      } @else {
-        <app-pdf-drop [busy]="reading()" (fileSelected)="analyzePdf($event)" />
-        <p class="hint">Se detectan nombre, correo, teléfono, habilidades, experiencia y educación. Los PDF escaneados (imágenes) no se pueden leer.</p>
       }
-    </app-modal>
+    </div>
+  } @else if (error()) {
+    <div class="card empty" role="alert">
+      <span class="empty__icon empty__icon--danger"><app-icon [icon]="i.CloudOff" [size]="32" /></span>
+      <p class="empty__title">No pudimos cargar los candidatos</p>
+      <p class="empty__text">{{ error() }}</p>
+      <button type="button" class="btn btn--secondary" (click)="load()">Reintentar</button>
+    </div>
+  } @else if (visible().length === 0) {
+    <div class="card empty">
+      <span class="empty__icon"><app-icon [icon]="i.SearchX" [size]="32" /></span>
+      <p class="empty__title">{{ candidates().length ? 'No hay candidatos que coincidan' : 'Aún no hay candidatos' }}</p>
+      <p class="empty__text">{{ candidates().length ? 'Cambia la búsqueda, elige otra área o registra uno nuevo.' : 'Registra el primero o sube varias hojas de vida con la carga masiva.' }}</p>
+      <a class="btn btn--primary" routerLink="/app/candidatos/nuevo">Registrar candidato</a>
+    </div>
+  } @else {
+    <div class="grid-3">
+      @for (item of visible(); track item.c.id; let n = $index) {
+        <article class="card stack">
+          <div class="row row--nowrap">
+            <span class="avatar" [class]="tones[n % tones.length]">{{ initials(item.c.name) }}</span>
+            <div class="list__main">
+              <h2 class="list__title"><a class="title-link" [routerLink]="['/app/candidatos', item.c.id]">{{ item.c.name }}</a></h2>
+              <p class="list__sub">{{ item.c.email }}</p>
+            </div>
+          </div>
+          <div class="row t-xs t-muted" style="gap: 12px">
+            <span class="chip chip--peach area-chip">{{ item.area | label: 'area' }}</span>
+            <span>{{ item.c.experience_years ? item.c.experience_years + ' años de experiencia' : 'Sin experiencia registrada' }}</span>
+          </div>
+          <div class="chips">
+            @for (s of item.c.skills.slice(0, 4); track s) { <span class="chip">{{ s }}</span> }
+            @if (item.c.skills.length > 4) { <span class="chip chip--more">+{{ item.c.skills.length - 4 }}</span> }
+            @if (!item.c.skills.length) { <span class="t-small t-muted">Sin habilidades todavía</span> }
+          </div>
+          <div class="card__foot">
+            <label class="btn btn--sm upload" [class.btn--secondary]="!item.c.resume_text" [class.btn--ghost]="!!item.c.resume_text" [class.is-loading]="uploadingFor() === item.c.id">
+              <input type="file" accept="application/pdf,.pdf" (change)="uploadFor(item.c, $event)" [disabled]="uploadingFor() === item.c.id" [attr.aria-label]="'Subir hoja de vida de ' + item.c.name" />
+              @if (uploadingFor() === item.c.id) { <span class="spinner"></span>Leyendo… } @else if (item.c.resume_text) { <app-icon [icon]="i.FileCheck" [size]="16" />PDF cargado } @else { <app-icon [icon]="i.CloudUpload" [size]="16" />Subir PDF }
+            </label>
+            <span class="spacer"></span>
+            <a class="btn btn--ghost btn--sm" [routerLink]="['/app/candidatos', item.c.id]">Ver perfil</a>
+            <button type="button" class="btn btn--danger-ghost btn--icon btn--sm" aria-label="Eliminar candidato" title="Eliminar" (click)="remove(item.c)"><app-icon [icon]="i.Trash2" [size]="18" /></button>
+          </div>
+        </article>
+      }
+    </div>
   }
 </div>

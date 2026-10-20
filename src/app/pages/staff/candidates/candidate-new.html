@@ -1,0 +1,144 @@
+<div class="page">
+  <div class="page-head">
+    <div class="page-head__text">
+      <nav class="crumbs" aria-label="Ruta"><a routerLink="/app/candidatos">Candidatos</a><app-icon [icon]="i.ChevronRight" [size]="14" /><span>Nuevo</span></nav>
+      <h1 class="t-h1">Registrar candidato</h1>
+      <p class="t-muted">Pega la hoja de vida y extrae el perfil automáticamente. Luego revisa y guarda.</p>
+    </div>
+  </div>
+
+  <div class="split split--wide">
+    <form class="card card--lg stack stack--lg" [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <div class="stack">
+        <h2 class="card__title">Contacto</h2>
+        <div class="form-grid">
+          <div class="field">
+            <label class="field__label" for="cn-name">Nombre completo <span class="req">*</span></label>
+            <input class="input" id="cn-name" formControlName="name" autocomplete="off" [class.is-invalid]="invalid('name')" />
+            @if (invalid('name')) { <span class="field__error"><app-icon [icon]="i.CircleAlert" [size]="15" />Escribe el nombre (mínimo 2 letras)</span> }
+          </div>
+          <div class="field">
+            <label class="field__label" for="cn-mail">Correo <span class="req">*</span></label>
+            <input class="input" id="cn-mail" type="email" formControlName="email" autocomplete="off" [class.is-invalid]="invalid('email')" />
+            @if (invalid('email')) { <span class="field__error"><app-icon [icon]="i.CircleAlert" [size]="15" />Escribe un correo válido</span> }
+          </div>
+          <div class="field">
+            <label class="field__label" for="cn-phone">Celular</label>
+            <input class="input" id="cn-phone" type="tel" formControlName="phone" autocomplete="off" />
+          </div>
+        </div>
+        <div class="row row--nowrap t-xs t-muted"><app-icon [icon]="i.Lock" [size]="14" />Estos datos nunca se envían a la IA.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field">
+        <div class="row row--between">
+          <label class="field__label" for="cn-cv">Hoja de vida (texto)</label>
+          <button type="button" class="btn btn--ghost btn--sm" (click)="pdfOpen.set(true)"><app-icon [icon]="i.CloudUpload" [size]="16" />O sube un PDF</button>
+        </div>
+        <textarea class="textarea cv" id="cn-cv" formControlName="resume_text" placeholder="Pega aquí la hoja de vida: nombre, contacto, experiencia, estudios y herramientas…"></textarea>
+        <span class="field__hint">{{ resumeLength() }} caracteres · pega el texto tal cual, sin formato.</span>
+      </div>
+
+      <div class="row">
+        <button type="button" class="btn btn--secondary" [class.is-loading]="extracting() === 'text'" [disabled]="extracting() !== null" (click)="extract()">
+          @if (extracting() === 'text') { <span class="spinner"></span>Extrayendo… } @else { <app-icon [icon]="i.FileText" [size]="18" />Extraer perfil }
+        </button>
+        @if (aiStatus()?.configured) {
+          <button type="button" class="btn btn--ia" [class.is-loading]="extracting() === 'ai'" [disabled]="extracting() !== null" (click)="extractWithAi()">
+            @if (extracting() === 'ai') { <span class="spinner"></span>Extrayendo con IA… } @else { <app-icon [icon]="i.Sparkles" [size]="18" />Extraer con IA }
+          </button>
+        }
+      </div>
+    </form>
+
+    <aside class="stack stack--lg side">
+      <section class="card card--lg stack" aria-live="polite">
+        <div class="row row--between">
+          <h2 class="card__title">Perfil extraído</h2>
+          @if (extractedBy() === 'ai') { <span class="badge badge--ia">Con IA</span> } @else if (extractedBy() === 'system') { <span class="badge">Sistema</span> }
+        </div>
+
+        @if (extracting()) {
+          <div class="stack" aria-busy="true"><span class="skeleton sk-title"></span><div class="row"><span class="skeleton sk-chip"></span><span class="skeleton sk-chip"></span><span class="skeleton sk-chip"></span></div><span class="skeleton sk-line"></span></div>
+        } @else {
+          @if (!extractedBy() && !skills().length) {
+            <div class="empty" style="padding: 20px 8px">
+              <span class="empty__icon"><app-icon [icon]="i.FileText" [size]="32" /></span>
+              <p class="empty__title" style="font-size: 16px">Aún no hay perfil</p>
+              <p class="empty__text t-small">Usa “Extraer perfil” (rápido, sin IA){{ aiStatus()?.configured ? ' o “Extraer con IA” (más detallado)' : '' }}, o llena los datos a mano.</p>
+            </div>
+          }
+          <div class="grid-2" style="gap: 12px" [formGroup]="form">
+            <div class="field">
+              <label class="field__label" for="cn-exp">Experiencia (años)</label>
+              <input class="input" id="cn-exp" type="number" min="0" max="45" formControlName="experience_years" placeholder="Se detecta" />
+            </div>
+            <div class="field">
+              <label class="field__label" for="cn-edu">Educación</label>
+              <select class="select" id="cn-edu" formControlName="education_level">
+                <option value="">Detectar</option>
+                @for (l of levels; track l.value) { <option [value]="l.value">{{ l.label }}</option> }
+              </select>
+            </div>
+          </div>
+          <p class="t-label">Habilidades detectadas</p>
+          @if (skills().length) {
+            <div class="chips">
+              @for (s of skills(); track s) {
+                <span class="chip" [class.chip--ia]="aiSkills().includes(s)">
+                  @if (aiSkills().includes(s)) { <app-icon [icon]="i.Sparkles" [size]="14" /> }
+                  {{ s }}<button type="button" class="chip__x" [attr.aria-label]="'Quitar ' + s" (click)="removeSkill(s)"><app-icon [icon]="i.X" [size]="14" /></button>
+                </span>
+              }
+            </div>
+          }
+          <form class="row row--nowrap" (submit)="$event.preventDefault(); addSkill()">
+            <label class="sr-only" for="cn-skill">Nueva habilidad</label>
+            <input class="input" id="cn-skill" placeholder="Agregar habilidad" [value]="newSkill()" (input)="newSkill.set($any($event.target).value)" />
+            <button type="submit" class="btn btn--secondary btn--icon" aria-label="Agregar habilidad"><app-icon [icon]="i.Plus" [size]="18" /></button>
+          </form>
+          @if (aiSummary()) {
+            <div class="card card--ia card--tight"><p class="t-small"><span class="t-strong t-ia">Resumen IA:</span> {{ aiSummary() }}</p></div>
+          }
+          @if (tried() && form.invalid) {
+            <div class="alert alert--danger" role="alert"><app-icon [icon]="i.CircleAlert" [size]="20" /><div class="alert__body">Faltan el nombre o el correo del candidato.</div></div>
+          }
+          <button type="button" class="btn btn--primary btn--block" [class.is-loading]="saving()" [disabled]="saving()" (click)="save()">
+            @if (saving()) { <span class="spinner"></span>Guardando… } @else { Guardar candidato }
+          </button>
+        }
+      </section>
+      <div class="alert alert--info"><app-icon [icon]="i.Info" [size]="20" /><div class="alert__body">“Extraer perfil” usa el NLP propio del sistema. La IA solo agrega sugerencias, marcadas en violeta.</div></div>
+    </aside>
+  </div>
+
+  @if (pdfOpen()) {
+    <app-modal title="Nuevo candidato desde su hoja de vida" (closed)="pdfOpen.set(false); preview.set(null)">
+      @if (preview(); as p) {
+        <div class="alert alert--success"><app-icon [icon]="i.FileText" [size]="20" /><div class="alert__body">Esto encontramos en <span class="t-strong">{{ p.file.name }}</span>. Revisa y confirma.</div></div>
+        <dl class="dl">
+          <dt>Nombre</dt><dd>{{ p.analysis.name ?? 'No detectado' }}</dd>
+          <dt>Correo</dt><dd>{{ p.analysis.email ?? 'No detectado' }}</dd>
+          <dt>Teléfono</dt><dd>{{ p.analysis.phone ?? 'No detectado' }}</dd>
+          <dt>Experiencia</dt><dd>{{ p.analysis.experience_years }} años</dd>
+          <dt>Educación</dt><dd>{{ p.analysis.education_level | label: 'education' }}</dd>
+        </dl>
+        <div class="chips">@for (s of p.analysis.skills; track s) { <span class="chip chip--match">{{ s }}</span> }</div>
+        @if (!p.analysis.email || !p.analysis.name) {
+          <div class="alert alert--warning"><app-icon [icon]="i.CircleAlert" [size]="20" /><div class="alert__body">No se detectó {{ !p.analysis.email ? 'el correo' : 'el nombre' }}. Pega el texto en el formulario y complétalo a mano.</div></div>
+        }
+        <div class="row">
+          <button type="button" class="btn btn--primary" [class.is-loading]="reading()" [disabled]="reading() || !p.analysis.email || !p.analysis.name" (click)="confirmPdf()">
+            @if (reading()) { <span class="spinner"></span>Creando… } @else { Crear candidato }
+          </button>
+          <button type="button" class="btn btn--ghost" (click)="preview.set(null)">Elegir otro PDF</button>
+        </div>
+      } @else {
+        <app-pdf-drop [busy]="reading()" (fileSelected)="analyzePdf($event)" />
+        <p class="t-small t-muted">Se detectan nombre, correo, teléfono, habilidades, experiencia y educación. Los PDF escaneados (imágenes) no se pueden leer.</p>
+      }
+    </app-modal>
+  }
+</div>

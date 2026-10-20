@@ -1,87 +1,124 @@
 <div class="page">
-  <a routerLink="/app/candidatos" class="small">← Candidatos</a>
+  <nav class="crumbs" aria-label="Ruta"><a routerLink="/app/candidatos">Candidatos</a><app-icon [icon]="i.ChevronRight" [size]="14" /><span>{{ candidate()?.name ?? 'Perfil' }}</span></nav>
 
   @if (loading()) {
-    <div class="card stack"><div class="skeleton" style="width: 40%"></div><div class="skeleton"></div></div>
+    <div class="card card--lg row row--nowrap"><span class="skeleton sk-avatar" style="width: 72px; height: 72px"></span><div class="stack" style="flex: 1"><span class="skeleton sk-title"></span><span class="skeleton sk-line"></span></div></div>
   } @else if (error()) {
-    <div class="empty"><strong>{{ error() }}</strong><a class="btn small" routerLink="/app/candidatos">Volver</a></div>
-  } @else if (candidate(); as c) {
-    <div class="card profile">
-      <span class="avatar">{{ initials() }}</span>
-      <div class="stack" style="flex: 1; gap: 6px">
-        <h1>{{ c.name }}</h1>
-        <div class="row small subtle">
-          <span>✉️ {{ c.email }}</span>
-          @if (c.phone) { <span>📞 {{ c.phone }}</span> }
-          <span>⏱ {{ c.experience_years }} años de experiencia</span>
-          <span>🎓 {{ c.education_level | label: 'education' }}</span>
-        </div>
-      </div>
-      <button type="button" class="btn" (click)="editing.set(true)">Editar</button>
+    <div class="card empty">
+      <span class="empty__icon empty__icon--danger"><app-icon [icon]="i.TriangleAlert" [size]="32" /></span>
+      <p class="empty__title">{{ error() }}</p>
+      <a class="btn btn--secondary" routerLink="/app/candidatos">Volver a candidatos</a>
     </div>
+  } @else if (candidate(); as c) {
+    <section class="card card--lg">
+      <div class="row row--top" style="gap: 20px">
+        <span class="avatar avatar--lg">{{ initials() }}</span>
+        <div class="stack stack--sm head-text">
+          <h1 class="t-h1">{{ c.name }}</h1>
+          <p class="t-muted">{{ (insights()?.main_area ?? 'general') | label: 'area' }} · {{ c.experience_years ? c.experience_years + ' años de experiencia' : 'Sin experiencia registrada' }} · {{ c.education_level | label: 'education' }}</p>
+          <div class="meta">
+            <span><app-icon [icon]="i.Mail" [size]="16" />{{ c.email }}</span>
+            @if (c.phone) { <span><app-icon [icon]="i.Phone" [size]="16" />{{ c.phone }}</span> }
+            <span><app-icon [icon]="i.Clock" [size]="16" />Registrado {{ (c.created_at | ago).toLowerCase() }}</span>
+          </div>
+        </div>
+        <div class="row">
+          <button type="button" class="btn btn--secondary" (click)="pdfOpen.set(true)"><app-icon [icon]="i.CloudUpload" [size]="18" />{{ c.resume_text ? 'Actualizar PDF' : 'Subir PDF' }}</button>
+          <button type="button" class="btn btn--secondary" (click)="editing.set(true)"><app-icon [icon]="i.Pencil" [size]="18" />Editar</button>
+          @if (recommended().length) {
+            <a class="btn btn--primary" href="#recomendadas" (click)="$event.preventDefault(); scrollTo('recomendadas')">Postular a vacante</a>
+          }
+        </div>
+      </div>
+    </section>
 
-    <div class="layout">
-      <div class="col">
-        <app-insights-card [insights]="insights()" />
+    <div class="split">
+      <div class="stack stack--lg">
+        <section class="card card--lg stack">
+          <h2 class="card__title">Resumen</h2>
+          @if (insights()?.summary) { <p>{{ insights()?.summary }}</p> }
+          <p class="t-label">Habilidades</p>
+          @if (c.skills.length) {
+            <div class="chips">@for (s of c.skills; track s) { <span class="chip">{{ s }}</span> }</div>
+          } @else {
+            <p class="t-small t-muted">Sin habilidades todavía: sube la hoja de vida o edítalas a mano.</p>
+          }
+        </section>
 
-        <div class="card stack">
-          <h2>📄 Hoja de vida</h2>
-          <app-pdf-drop text="Subir o actualizar la hoja de vida en PDF" [busy]="uploading()" (fileSelected)="upload($event)" />
+        <section class="card card--lg stack">
+          <div class="row row--between">
+            <h2 class="card__title">Hoja de vida</h2>
+            @if (c.resume_text) {
+              <button type="button" class="btn btn--ghost btn--sm" (click)="showResume.set(!showResume())">{{ showResume() ? 'Ocultar texto' : 'Ver texto completo' }}</button>
+            }
+          </div>
           @if (c.resume_text) {
-            <button type="button" class="btn small ghost" (click)="showResume.set(!showResume())">{{ showResume() ? 'Ocultar texto' : 'Ver texto extraído' }}</button>
-            @if (showResume()) { <p class="pre">{{ c.resume_text }}</p> }
+            <div class="file">
+              <span class="file__icon"><app-icon [icon]="i.FileText" [size]="20" /></span>
+              <div class="file__main"><div class="file__name">Texto de la hoja de vida</div><div class="t-xs t-muted">{{ c.resume_text.length }} caracteres leídos por el sistema</div></div>
+            </div>
+            @if (showResume()) { <p class="pre resume">{{ c.resume_text }}</p> }
           } @else {
-            <p class="subtle small">Sin hoja de vida todavía: súbela para mejorar el ajuste.</p>
+            <p class="t-small t-muted">Sin hoja de vida todavía: súbela para mejorar el ajuste.</p>
+            <app-pdf-drop text="Subir la hoja de vida en PDF" [busy]="uploading()" (fileSelected)="upload($event)" />
           }
-        </div>
+        </section>
+
+        <app-insights-card [insights]="insights()" [showSummary]="false" />
       </div>
 
-      <div class="col">
-        <div class="card stack">
-          <h2>💼 Vacantes recomendadas</h2>
-          @if (recommended().length === 0) {
-            <p class="subtle small">No hay vacantes abiertas a las que no se haya postulado.</p>
-          }
-          @for (job of recommended(); track job.job_id) {
-            <div class="stack rec">
-              <div class="row">
-                <a [routerLink]="['/app/vacantes', job.job_id]"><strong>{{ job.title }}</strong></a>
-                <span class="spacer"></span>
-                <button type="button" class="btn small primary" (click)="apply(job)">+ Postular</button>
-              </div>
-              <app-score-bar [score]="job.score" [classification]="job.classification" />
-            </div>
-          }
-        </div>
-
-        <div class="card stack">
-          <h2>📋 Postulaciones</h2>
+      <aside class="stack stack--lg">
+        <section class="card stack">
+          <h2 class="card__title">Postulaciones</h2>
           @if (applications().length === 0) {
-            <p class="subtle small">Aún no se ha postulado a ninguna vacante.</p>
+            <p class="t-small t-muted">Aún no se ha postulado a ninguna vacante.</p>
           } @else {
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>Vacante</th><th>Ajuste</th><th>Estado</th><th>Fecha</th></tr></thead>
-                <tbody>
-                  @for (a of applications(); track a.id) {
-                    <tr>
-                      <td><a [routerLink]="['/app/vacantes', a.job_id]">{{ jobTitles().get(a.job_id) ?? 'Vacante ' + a.job_id }}</a></td>
-                      <td><strong>{{ a.score }}</strong></td>
-                      <td><span class="badge" [class]="a.status">{{ a.status | label: 'status' }}</span></td>
-                      <td class="small subtle">{{ a.created_at | date: 'd MMM' }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
+            <div class="list">
+              @for (a of applications(); track a.id) {
+                <a class="list__item plain-link" [routerLink]="['/app/vacantes', a.job_id]">
+                  <div class="list__main">
+                    <div class="list__title">{{ jobTitles().get(a.job_id) ?? 'Vacante ' + a.job_id }}</div>
+                    <span [class]="statusBadge(a.status)" style="margin-top: 4px">{{ a.status | label: 'status' }}</span>
+                  </div>
+                  <span class="score-pill" [class]="'score-pill--' + tone(a.details.classification)">{{ a.score }}</span>
+                </a>
+              }
             </div>
           }
-        </div>
-      </div>
+        </section>
+
+        <section class="card stack" id="recomendadas">
+          <h2 class="card__title">Vacantes recomendadas</h2>
+          @if (recommended().length === 0) {
+            <p class="t-small t-muted">No hay vacantes abiertas a las que no se haya postulado.</p>
+          }
+          <div class="list">
+            @for (job of recommended(); track job.job_id) {
+              <div class="list__item">
+                <span class="score-pill" [class]="'score-pill--' + tone(job.classification)">{{ job.score }}</span>
+                <div class="list__main">
+                  <a class="list__title title-link" [routerLink]="['/app/vacantes', job.job_id]">{{ job.title }}</a>
+                  <div class="list__sub">{{ job.matching_skills.length }} habilidades coinciden</div>
+                </div>
+                <button type="button" class="btn btn--secondary btn--sm" [class.is-loading]="applying() === job.job_id" [disabled]="applying() === job.job_id" (click)="apply(job)">
+                  @if (applying() === job.job_id) { <span class="spinner"></span> } @else { <app-icon [icon]="i.Plus" [size]="16" /> }Postular
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+      </aside>
     </div>
 
     @if (editing()) {
       <app-modal title="Editar candidato" (closed)="editing.set(false)">
         <app-candidate-form [candidate]="c" (saved)="saved($event)" (cancelled)="editing.set(false)" />
+      </app-modal>
+    }
+    @if (pdfOpen()) {
+      <app-modal title="Hoja de vida en PDF" (closed)="pdfOpen.set(false)">
+        <app-pdf-drop [text]="c.resume_text ? 'Reemplazar la hoja de vida' : 'Subir la hoja de vida'" [busy]="uploading()" (fileSelected)="upload($event)" />
+        <p class="t-small t-muted">El sistema vuelve a leer habilidades, experiencia y educación, y recalcula el ajuste de sus postulaciones.</p>
       </app-modal>
     }
   }

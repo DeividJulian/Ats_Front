@@ -17,7 +17,7 @@ import { LabelPipe } from './label.pipe';
           <h2 class="card__title"><app-icon class="t-primary" [icon]="icons.Compass" [size]="20" />{{ title() }}</h2>
           <span class="badge badge--candidato">{{ i.main_area | label: 'area' }}</span>
         </div>
-        <p class="t-small">{{ i.summary }}</p>
+        @if (showSummary()) { <p class="t-small">{{ i.summary }}</p> }
 
         @for (group of i.skills_by_area | keyvalue; track group.key) {
           <div class="stack stack--sm">
@@ -59,5 +59,6 @@ import { LabelPipe } from './label.pipe';
 export class InsightsCard {
   readonly insights = input<CandidateInsights | null>(null);
   readonly title = input('Análisis del perfil');
+  readonly showSummary = input(true);
   protected readonly icons = { Compass, TrendingUp };
 }

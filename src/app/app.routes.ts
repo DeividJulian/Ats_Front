@@ -24,6 +24,7 @@ export const routes: Routes = [
       { path: 'vacantes/:id/editar', title: page('Editar vacante'), loadComponent: () => import('./pages/staff/job-form/job-form').then((m) => m.JobForm) },
       { path: 'ranking', title: page('Ranking'), loadComponent: () => import('./pages/staff/ranking/ranking').then((m) => m.Ranking) },
       { path: 'candidatos', title: page('Candidatos'), loadComponent: () => import('./pages/staff/candidates/candidates').then((m) => m.Candidates) },
+      { path: 'candidatos/nuevo', title: page('Registrar candidato'), loadComponent: () => import('./pages/staff/candidates/candidate-new').then((m) => m.CandidateNew) },
       { path: 'candidatos/:id', title: page('Candidato'), loadComponent: () => import('./pages/staff/candidate-detail/candidate-detail').then((m) => m.CandidateDetail) },
       { path: 'analisis', title: page('Análisis masivo'), loadComponent: () => import('./pages/staff/bulk-analysis/bulk-analysis').then((m) => m.BulkAnalysis) },
       { path: 'usuarios', title: page('Usuarios'), canActivate: [roleGuard('admin')], loadComponent: () => import('./pages/staff/users/users').then((m) => m.Users) },

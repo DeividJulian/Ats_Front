@@ -12,28 +12,48 @@ import { EDUCATION_LEVELS } from '../../../core/utils/labels';
   selector: 'app-candidate-form',
   imports: [ReactiveFormsModule],
   template: `
-    <form class="form" [formGroup]="form" (ngSubmit)="save()" novalidate>
-      <div class="two">
-        <label>Nombre<input formControlName="name" [class.invalid]="invalid('name')" />
-          @if (invalid('name')) { <span class="error-text">Mínimo 2 caracteres</span> }
-        </label>
-        <label>Correo<input type="email" formControlName="email" [class.invalid]="invalid('email')" />
-          @if (invalid('email')) { <span class="error-text">Correo no válido</span> }
-        </label>
-        <label>Teléfono <span class="hint">(opcional)</span><input formControlName="phone" /></label>
-        <label>Años de experiencia <span class="hint">(vacío: se detecta)</span><input type="number" min="0" max="45" formControlName="experience_years" /></label>
-        <label>Nivel educativo
-          <select formControlName="education_level">
+    <form class="stack" [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <div class="form-grid">
+        <div class="field">
+          <label class="field__label" for="cf-name">Nombre <span class="req">*</span></label>
+          <input class="input" id="cf-name" formControlName="name" [class.is-invalid]="invalid('name')" />
+          @if (invalid('name')) { <span class="field__error">Mínimo 2 caracteres</span> }
+        </div>
+        <div class="field">
+          <label class="field__label" for="cf-mail">Correo <span class="req">*</span></label>
+          <input class="input" id="cf-mail" type="email" formControlName="email" [class.is-invalid]="invalid('email')" />
+          @if (invalid('email')) { <span class="field__error">Correo no válido</span> }
+        </div>
+        <div class="field">
+          <label class="field__label" for="cf-phone">Teléfono</label>
+          <input class="input" id="cf-phone" formControlName="phone" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="cf-exp">Años de experiencia</label>
+          <input class="input" id="cf-exp" type="number" min="0" max="45" formControlName="experience_years" placeholder="Vacío: se detecta" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="cf-edu">Nivel educativo</label>
+          <select class="select" id="cf-edu" formControlName="education_level">
             <option value="">Detectar de la hoja de vida</option>
             @for (l of levels; track l.value) { <option [value]="l.value">{{ l.label }}</option> }
           </select>
-        </label>
-        <label>Habilidades adicionales <span class="hint">(separadas por comas)</span><input formControlName="skills" /></label>
+        </div>
+        <div class="field">
+          <label class="field__label" for="cf-skills">Habilidades</label>
+          <input class="input" id="cf-skills" formControlName="skills" />
+          <span class="field__hint">Separadas por comas.</span>
+        </div>
+        <div class="field full">
+          <label class="field__label" for="cf-cv">Texto de la hoja de vida</label>
+          <textarea class="textarea" id="cf-cv" formControlName="resume_text" placeholder="Pega aquí la hoja de vida: el sistema detecta habilidades, experiencia y educación."></textarea>
+        </div>
       </div>
-      <label>Texto de la hoja de vida<textarea formControlName="resume_text" rows="7" placeholder="Pega aquí la hoja de vida: el sistema detecta habilidades, experiencia y educación."></textarea></label>
-      <div class="row">
-        <button type="submit" class="btn primary" [disabled]="saving()">{{ saving() ? 'Guardando…' : candidate() ? 'Guardar cambios' : 'Crear candidato' }}</button>
-        <button type="button" class="btn ghost" (click)="cancelled.emit()">Cancelar</button>
+      <div class="row" style="justify-content: flex-end">
+        <button type="button" class="btn btn--ghost" (click)="cancelled.emit()">Cancelar</button>
+        <button type="submit" class="btn btn--primary" [class.is-loading]="saving()" [disabled]="saving()">
+          @if (saving()) { <span class="spinner"></span>Guardando… } @else { {{ candidate() ? 'Guardar cambios' : 'Crear candidato' }} }
+        </button>
       </div>
     </form>
   `,

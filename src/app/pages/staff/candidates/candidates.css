@@ -1,42 +1,6 @@
-.directory-head { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
-.live-label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--primary); }
-.live-label .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
-.kpis { display: flex; gap: 10px; }
-.kpis div { display: grid; justify-items: center; padding: 10px 16px; border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); }
-.kpis strong { font-size: 24px; color: var(--primary); line-height: 1.1; }
-.kpis strong.purple { color: var(--ai); }
-.kpis span { font-size: 12px; color: var(--muted); font-weight: 600; }
-
-.new-card { display: grid; gap: 16px; }
-.new-head { display: flex; align-items: center; gap: 12px; padding: 0; border: none; background: none; font: inherit; color: var(--text); cursor: pointer; }
-.new-head .title { font-size: 18px; }
-.toggle { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); color: var(--muted); }
-
-.assistant { display: grid; gap: 12px; padding: 16px; border-radius: 16px; background: linear-gradient(160deg, #f1ebff, #f7f4ff); color: #3b0764; }
-.summary { font-style: italic; }
-
-.with-icon { position: relative; display: flex; align-items: center; }
-.with-icon app-icon { position: absolute; left: 13px; color: var(--muted); pointer-events: none; }
-.with-icon input, .with-icon select { padding-left: 40px; }
-
-.skills-box { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border); }
-.skill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); font: inherit; font-size: 12.5px; font-weight: 600; color: var(--text); cursor: pointer; }
-.skill:hover { border-color: var(--bad); color: var(--bad); }
-.skill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
-.add { display: inline-flex; align-items: center; gap: 2px; }
-.add input { width: 120px; padding: 5px 10px; font-size: 12.5px; background: var(--surface); }
-.actions .grow { flex: 1; }
-
-.filters { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
-.filters button { flex: none; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; }
-.filters button.active { background: var(--primary); border-color: var(--primary); color: #fff; }
-
-.directory { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr)); }
-.person-card { display: grid; gap: 12px; }
-.top { align-items: flex-start; flex-wrap: nowrap; }
-.name { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
-.meta { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-.upload { position: relative; overflow: hidden; cursor: pointer; }
+.toolbar .control { max-width: 460px; }
+.title-link { color: var(--c-text); }
+.title-link:hover { color: var(--c-primary); }
+.area-chip { min-height: 26px; }
+.upload { position: relative; overflow: hidden; }
 .upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.upload.busy { cursor: progress; }
-.tip { align-items: center; }

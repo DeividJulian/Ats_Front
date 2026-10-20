@@ -1,30 +1,35 @@
-import { DatePipe } from '@angular/common';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ChevronRight, Clock, CloudUpload, FileText, Mail, Pencil, Phone, Plus, TriangleAlert } from 'lucide-angular';
 import { forkJoin } from 'rxjs';
 
 import { Application, Candidate, CandidateInsights, Job, JobRecommendation } from '../../../core/models';
 import { ApplicationService, CandidateService, JobService } from '../../../core/services/api.services';
 import { ToastService } from '../../../core/services/toast.service';
 import { errorMessage, initials } from '../../../core/utils/http-error';
+import { statusBadge } from '../../../core/utils/labels';
 import { reloadOnRemoteChanges } from '../../../core/workers/tab-sync.service';
+import { AgoPipe } from '../../../shared/ago.pipe';
+import { Icon } from '../../../shared/icon';
 import { InsightsCard } from '../../../shared/insights-card';
 import { LabelPipe } from '../../../shared/label.pipe';
 import { Modal } from '../../../shared/modal';
 import { PdfDrop } from '../../../shared/pdf-drop';
-import { ScoreBar } from '../../../shared/score-bar';
+import { scoreTone } from '../../../shared/score-bar';
 import { CandidateForm } from '../candidates/candidate-form';
 
 @Component({
   selector: 'app-candidate-detail',
-  imports: [RouterLink, DatePipe, LabelPipe, ScoreBar, Modal, PdfDrop, CandidateForm, InsightsCard],
+  imports: [RouterLink, LabelPipe, AgoPipe, Icon, Modal, PdfDrop, CandidateForm, InsightsCard],
   templateUrl: './candidate-detail.html',
   styles: `
-    .profile { display: flex; gap: 18px; align-items: center; }
-    .avatar { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 22px; background: linear-gradient(135deg, var(--violet), var(--blue)); color: #fff; flex: none; }
-    .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
-    .col { display: grid; gap: 18px; }
-    @media (max-width: 960px) { .layout { grid-template-columns: 1fr; } }
+    .head-text { flex: 1 1 320px; min-width: 0; }
+    .plain-link { text-decoration: none; color: inherit; }
+    .plain-link:hover .list__title { color: var(--c-primary); }
+    .plain-link .list__main { display: flex; flex-direction: column; align-items: flex-start; }
+    .title-link { color: var(--c-text); display: block; }
+    .title-link:hover { color: var(--c-primary); }
+    .resume { max-height: 420px; color: var(--c-text); }
   `,
 })
 export class CandidateDetail {
@@ -36,6 +41,11 @@ export class CandidateDetail {
   private readonly jobsApi = inject(JobService);
   private readonly toasts = inject(ToastService);
 
+  protected readonly i = { ChevronRight, Clock, CloudUpload, FileText, Mail, Pencil, Phone, Plus, TriangleAlert };
+  protected readonly statusBadge = statusBadge;
+  protected readonly tone = scoreTone;
+  protected readonly pdfOpen = signal(false);
+  protected readonly applying = signal<number | null>(null);
   protected readonly candidate = signal<Candidate | null>(null);
   protected readonly insights = signal<CandidateInsights | null>(null);
   protected readonly recommended = signal<JobRecommendation[]>([]);
@@ -89,6 +99,7 @@ export class CandidateDetail {
     this.api.uploadResume(Number(this.id()), file).subscribe({
       next: (c) => {
         this.uploading.set(false);
+        this.pdfOpen.set(false);
         this.toasts.ok(`Hoja de vida leída: ${c.skills.length} habilidades en el perfil`);
         this.load();
       },
@@ -100,12 +111,21 @@ export class CandidateDetail {
   }
 
   protected apply(job: JobRecommendation): void {
+    this.applying.set(job.job_id);
     this.applicationsApi.apply(job.job_id, Number(this.id())).subscribe({
       next: (a) => {
+        this.applying.set(null);
         this.toasts.ok(`Postulado a ${job.title} con ${a.score} puntos`);
         this.load();
       },
-      error: (e) => this.toasts.error(errorMessage(e)),
+      error: (e) => {
+        this.applying.set(null);
+        this.toasts.error(errorMessage(e));
+      },
     });
+  }
+
+  protected scrollTo(id: string): void {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
