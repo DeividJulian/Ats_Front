@@ -33,8 +33,6 @@ No hay contraseñas. En **Iniciar sesión** la persona escribe su correo y le ll
 - `authGuard`, `roleGuard` y `guestGuard` protegen las rutas según la sesión y el rol.
 - Al cerrar sesión se borran las respuestas del API que guardó el Service Worker, para que otra persona no las vea en ese navegador.
 
-Las **cuentas de demostración** (`reclutador@demo.com` y `camila.ortega@example.com`) tienen correos falsos: sus botones aparecen en el login solo si el backend tiene `ALLOW_DEMO_LOGIN=true` y alguien cargó los datos de demostración.
-
 ## Los tres workers
 
 | Worker | Archivo | Para qué |

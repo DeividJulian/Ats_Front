@@ -149,7 +149,7 @@ export class Users {
     this.statsApi.loadDemo(reset).subscribe({
       next: () => {
         this.seeding.set(false);
-        this.toasts.ok('Datos de demostración cargados. Cuentas: reclutador@demo.com y camila.ortega@example.com (clave Demo1234)');
+        this.toasts.ok('Datos de demostración cargados');
         this.load();
       },
       error: (e) => {

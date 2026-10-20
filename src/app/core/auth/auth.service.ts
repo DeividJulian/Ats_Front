@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, map, tap } from 'rxjs';
 
 import { API_URL } from '../config/api.config';
-import { AuthOptions, CodeSent, DemoAccount, RegisterInput, Role, TokenResponse, User } from '../models';
+import { CodeSent, RegisterInput, Role, TokenResponse, User } from '../models';
 import { clearApiCache } from '../workers/api-cache';
 
 export const TOKEN_KEY = 'ats.token';
@@ -92,17 +92,6 @@ export class AuthService {
     return this.http
       .post<TokenResponse>(`${this.url}/verify`, { email, code })
       .pipe(tap((r) => this.save(r)), map((r) => r.user));
-  }
-
-  /** The two seeded demo accounts, when the server allows them (their emails are fake). */
-  demo(account: DemoAccount): Observable<User> {
-    return this.http
-      .post<TokenResponse>(`${this.url}/demo`, { account })
-      .pipe(tap((r) => this.save(r)), map((r) => r.user));
-  }
-
-  options(): Observable<AuthOptions> {
-    return this.http.get<AuthOptions>(`${this.url}/options`);
   }
 
   /** Reloads the user from the server (for example after editing the profile name). */

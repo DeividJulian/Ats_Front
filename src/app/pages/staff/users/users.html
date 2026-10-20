@@ -106,7 +106,7 @@
 
   <section class="card stack">
     <h2 class="card__title">Datos de demostración</h2>
-    <p class="t-small t-muted">Carga 3 vacantes, 9 candidatos, 10 postulaciones y dos cuentas de prueba (reclutador y candidata, clave <code>Demo1234</code>). Reiniciar borra todo lo demás y solo funciona si el servidor lo permite.</p>
+    <p class="t-small t-muted">Carga 3 vacantes, 9 candidatos y 10 postulaciones de ejemplo (no crea cuentas). Reiniciar borra todo lo demás y solo funciona si el servidor lo permite.</p>
     <div class="row">
       <button type="button" class="btn btn--secondary" [class.is-loading]="seeding()" [disabled]="seeding()" (click)="loadDemo(false)">Cargar datos de demostración</button>
       <button type="button" class="btn btn--danger-ghost" [disabled]="seeding()" (click)="loadDemo(true)">Reiniciar y cargar</button>

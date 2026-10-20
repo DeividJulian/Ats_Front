@@ -78,17 +78,10 @@ describe('AuthService', () => {
     expect(localStorage.getItem(TOKEN_KEY)).toBeNull();
   });
 
-  it('enters a demo account and reads the login options', () => {
+  it('a candidate session knows its role', () => {
     const { auth, http } = setup();
-    let demo = false;
-    auth.options().subscribe((o) => (demo = o.demo_login));
-    http.expectOne(`${API_URL}/auth/options`).flush({ demo_login: true });
-    expect(demo).toBe(true);
-
-    auth.demo('candidate').subscribe();
-    const req = http.expectOne(`${API_URL}/auth/demo`);
-    expect(req.request.body).toEqual({ account: 'candidate' });
-    req.flush({ access_token: fakeToken(inOneHour()), token_type: 'bearer', user: { ...USER, role: 'candidate', candidate_id: 7 } });
+    auth.verify('juan@mail.com', '123456').subscribe();
+    http.expectOne(`${API_URL}/auth/verify`).flush({ access_token: fakeToken(inOneHour()), token_type: 'bearer', user: { ...USER, role: 'candidate', candidate_id: 7 } });
     expect(auth.role()).toBe('candidate');
     expect(auth.hasRole('candidate')).toBe(true);
     expect(auth.hasRole('admin', 'recruiter')).toBe(false);

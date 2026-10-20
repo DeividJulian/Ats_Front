@@ -47,16 +47,6 @@
           </button>
         </form>
 
-        @if (demoEnabled()) {
-          <div class="or">o entra con una cuenta de prueba</div>
-          <div class="grid-2 demo" style="gap: 10px">
-            @for (d of demoAccounts; track d.account) {
-              <button type="button" class="btn btn--secondary" [disabled]="sending()" (click)="useDemo(d.account)">
-                <app-icon [icon]="d.account === 'recruiter' ? i.Building2 : i.UserIcon" [size]="18" />Demo {{ d.label }}
-              </button>
-            }
-          </div>
-        }
       } @else {
         <app-code-step [email]="email()" (verified)="enter($event)" (back)="step.set('email')" />
       }

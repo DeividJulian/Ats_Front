@@ -70,10 +70,9 @@ describe('Landing page', () => {
 });
 
 describe('Login page', () => {
-  function open(demo = false) {
+  function open() {
     const backend = setup();
     const fixture = TestBed.createComponent(Login);
-    backend.expectOne(`${API_URL}/auth/options`).flush({ demo_login: demo });
     return { backend, fixture, page: fixture.nativeElement as HTMLElement };
   }
 
@@ -113,22 +112,12 @@ describe('Login page', () => {
     expect(page.querySelector('[role=alert]')?.textContent).toContain('crea una primero');
   });
 
-  it('shows the demo accounts only when the server allows them', async () => {
-    const hidden = open(false);
-    await hidden.fixture.whenStable();
-    expect(hidden.page.querySelectorAll('.demo button')).toHaveLength(0);
-
-    TestBed.resetTestingModule();
-    const { backend, fixture, page } = open(true);
-    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+  it('has no demo account buttons', async () => {
+    const { backend, fixture, page } = open();
     await fixture.whenStable();
-    const demo = page.querySelectorAll<HTMLButtonElement>('.demo button');
-    expect(demo).toHaveLength(2);
-    demo[0].click();
-    const req = backend.expectOne(`${API_URL}/auth/demo`);
-    expect(req.request.body).toEqual({ account: 'recruiter' });
-    req.flush({ access_token: fakeToken(Math.floor(Date.now() / 1000) + 3600), token_type: 'bearer', user: USER });
-    expect(navigate).toHaveBeenCalledWith('/app');
+    expect(page.querySelectorAll('.demo button')).toHaveLength(0);
+    expect(page.textContent).not.toContain('Demo');
+    backend.expectNone(`${API_URL}/auth/demo`);
   });
 });
 

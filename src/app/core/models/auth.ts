@@ -31,13 +31,6 @@ export interface CodeSent {
   email: string;
 }
 
-export interface AuthOptions {
-  /** Whether the two seeded demo accounts can enter without a code */
-  demo_login: boolean;
-}
-
-export type DemoAccount = 'recruiter' | 'candidate';
-
 export interface StaffUserInput {
   name: string;
   email: string;
