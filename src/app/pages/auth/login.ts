@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, input, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -41,6 +42,8 @@ export class Login {
   protected readonly email = signal('');
   protected readonly sending = signal(false);
   protected readonly error = signal<string | null>(null);
+  /** The email had no account (404): offer to create one with it. */
+  protected readonly noAccount = signal(false);
 
   protected readonly form = inject(NonNullableFormBuilder).group({
     email: [rememberedEmail(), [Validators.required, Validators.email]],
@@ -59,6 +62,7 @@ export class Login {
     const email = this.form.controls.email.value.trim().toLowerCase();
     this.sending.set(true);
     this.error.set(null);
+    this.noAccount.set(false);
     this.auth.requestCode(email).subscribe({
       next: () => {
         this.sending.set(false);
@@ -73,8 +77,13 @@ export class Login {
       error: (e) => {
         this.sending.set(false);
         this.error.set(errorMessage(e));
+        this.noAccount.set(e instanceof HttpErrorResponse && e.status === 404);
       },
     });
+  }
+
+  protected typedEmail(): string {
+    return this.form.controls.email.value.trim().toLowerCase();
   }
 
   protected enter(user: User): void {

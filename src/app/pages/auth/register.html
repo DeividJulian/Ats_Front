@@ -49,7 +49,7 @@
         </form>
         <div class="alert alert--info"><app-icon [icon]="i.Building2" [size]="20" /><div class="alert__body"><div class="alert__title">¿Eres empresa?</div>Las cuentas de reclutador las crea el administrador desde Usuarios.</div></div>
       } @else {
-        <app-code-step [email]="email()" submitLabel="Activar mi cuenta" (verified)="activated($event)" (back)="step.set('form')" />
+        <app-code-step [email]="sentTo()" submitLabel="Activar mi cuenta" (verified)="activated($event)" (back)="step.set('form')" />
       }
     </div>
   </main>

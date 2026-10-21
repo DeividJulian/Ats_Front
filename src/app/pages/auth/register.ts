@@ -1,4 +1,4 @@
-import { Component, inject, input, signal } from '@angular/core';
+import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Building2, ChartColumn, CircleAlert } from 'lucide-angular';
@@ -18,9 +18,11 @@ import { CodeStep } from './code-step';
   templateUrl: './register.html',
   styleUrl: './auth.css',
 })
-export class Register {
+export class Register implements OnInit {
   /** Query parameter: page to return to (for example, the job the user wanted to apply to) */
   readonly redirect = input<string>();
+  /** Query parameter: email typed on the login page that had no account */
+  readonly email = input<string>();
 
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
@@ -28,7 +30,7 @@ export class Register {
 
   protected readonly i = { Building2, ChartColumn, CircleAlert };
   protected readonly step = signal<'form' | 'code'>('form');
-  protected readonly email = signal('');
+  protected readonly sentTo = signal('');
   protected readonly sending = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -37,6 +39,11 @@ export class Register {
     email: ['', [Validators.required, Validators.email]],
     phone: [''],
   });
+
+  ngOnInit(): void {
+    const email = this.email()?.trim();
+    if (email) this.form.controls.email.setValue(email);
+  }
 
   protected invalid(name: keyof typeof this.form.controls): boolean {
     const control = this.form.controls[name];
@@ -54,7 +61,7 @@ export class Register {
     this.auth.register({ name: name.trim(), email: email.trim().toLowerCase(), phone: phone.trim() || null }).subscribe({
       next: (sent) => {
         this.sending.set(false);
-        this.email.set(sent.email);
+        this.sentTo.set(sent.email);
         this.step.set('code');
       },
       error: (e) => {

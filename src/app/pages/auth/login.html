@@ -29,7 +29,15 @@
 
       @if (step() === 'email') {
         @if (error()) {
-          <div class="alert alert--danger" role="alert"><app-icon [icon]="i.CircleAlert" [size]="20" /><div class="alert__body">{{ error() }}</div></div>
+          <div class="alert alert--danger" role="alert">
+            <app-icon [icon]="i.CircleAlert" [size]="20" />
+            <div class="alert__body">
+              {{ error() }}
+              @if (noAccount()) {
+                <div><a class="t-strong" routerLink="/registro" [queryParams]="{ email: typedEmail(), redirect: redirect() }">Crear cuenta con este correo</a></div>
+              }
+            </div>
+          </div>
         }
         <form class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
           <div class="field">

@@ -7,6 +7,7 @@ import { API_URL } from '../core/config/api.config';
 import { Candidate, JobRecommendation, MyApplication, PublicJob } from '../core/models';
 import { USER, fakeToken } from '../../testing/fixtures';
 import { Login } from './auth/login';
+import { Register } from './auth/register';
 import { cleanCode } from './auth/code-step';
 import { Landing } from './landing/landing';
 import { timeline } from './portal/applications/applications';
@@ -110,6 +111,28 @@ describe('Login page', () => {
     backend.expectOne(`${API_URL}/auth/login`).flush({ detail: 'No hay una cuenta con ese correo: crea una primero' }, { status: 404, statusText: 'Not Found' });
     await fixture.whenStable();
     expect(page.querySelector('[role=alert]')?.textContent).toContain('crea una primero');
+  });
+
+  it('offers to create an account with an email that has none', async () => {
+    const { backend, fixture, page } = open();
+    await fixture.whenStable();
+    const input = page.querySelector<HTMLInputElement>('input[type=email]')!;
+    input.value = 'Nuevo@Mail.com';
+    input.dispatchEvent(new Event('input'));
+    page.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+    backend.expectOne(`${API_URL}/auth/login`).flush({ detail: 'No hay una cuenta con ese correo: crea una primero' }, { status: 404, statusText: 'Not Found' });
+    await fixture.whenStable();
+    const link = page.querySelector<HTMLAnchorElement>('[role=alert] a')!;
+    expect(link.textContent).toContain('Crear cuenta con este correo');
+    expect(link.getAttribute('href')).toContain('email=nuevo@mail.com');
+  });
+
+  it('the sign-up page starts with the email that came from the login', async () => {
+    setup();
+    const fixture = TestBed.createComponent(Register);
+    fixture.componentRef.setInput('email', 'nuevo@mail.com');
+    await fixture.whenStable();
+    expect((fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('input[type=email]')!.value).toBe('nuevo@mail.com');
   });
 
   it('remembers the email of the last code requested', async () => {
