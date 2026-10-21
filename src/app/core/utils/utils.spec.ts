@@ -1,4 +1,4 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 
 import { afterLoginUrl } from '../../pages/auth/auth-redirect';
 import { pdfProblem } from '../../shared/pdf-drop';
@@ -20,9 +20,30 @@ describe('errorMessage', () => {
   it('handles lists of details and unknown errors', () => {
     const e = new HttpErrorResponse({ status: 422, error: { detail: [{ msg: 'uno' }, { msg: 'dos' }] } });
     expect(errorMessage(e)).toBe('uno; dos');
-    expect(errorMessage(new HttpErrorResponse({ status: 500 }))).toBe('Error 500');
+    expect(errorMessage(new HttpErrorResponse({ status: 500 }))).toContain('error en el servidor (500)');
+    expect(errorMessage(new HttpErrorResponse({ status: 404 }))).toBe('Error 404');
     expect(errorMessage(new Error('falló'))).toBe('falló');
     expect(errorMessage('raro')).toBe('Ocurrió un error inesperado');
+  });
+});
+
+describe('errorMessage for a busy or sleeping server', () => {
+  it('says how long to wait after a 429', () => {
+    const headers = new HttpHeaders({ 'Retry-After': '20' });
+    const e = new HttpErrorResponse({ status: 429, headers, error: { detail: 'Se alcanzó el límite de uso de Groq.' } });
+    expect(errorMessage(e)).toBe('Se alcanzó el límite de uso de Groq. Intenta de nuevo en 20 s.');
+  });
+
+  it('does not repeat the wait when the message already has it', () => {
+    const headers = new HttpHeaders({ 'Retry-After': '28' });
+    const e = new HttpErrorResponse({ status: 429, headers, error: { detail: 'Espera 28 segundos antes de pedir otro código' } });
+    expect(errorMessage(e)).toBe('Espera 28 segundos antes de pedir otro código');
+  });
+
+  it('explains a server that is starting or down', () => {
+    for (const status of [502, 503, 504]) {
+      expect(errorMessage(new HttpErrorResponse({ status }))).toContain('puede estar iniciando');
+    }
   });
 });
 
