@@ -15,6 +15,17 @@ import { Icon } from '../../../shared/icon';
 import { LabelPipe } from '../../../shared/label.pipe';
 
 type Filter = 'all' | JobStatus;
+export type JobsView = 'cards' | 'table';
+export const JOBS_VIEW_KEY = 'ats.jobsView';
+
+/** The view chosen last time on this browser (cards by default). */
+export function savedJobsView(): JobsView {
+  try {
+    return localStorage.getItem(JOBS_VIEW_KEY) === 'table' ? 'table' : 'cards';
+  } catch {
+    return 'cards';
+  }
+}
 
 @Component({
   selector: 'app-jobs',
@@ -40,7 +51,7 @@ export class Jobs {
     { value: 'open', label: 'Abiertas' },
     { value: 'closed', label: 'Cerradas' },
   ];
-  protected readonly view = signal<'cards' | 'table'>('cards');
+  protected readonly view = signal<JobsView>(savedJobsView());
   protected readonly areaOf = areaOf;
 
   protected readonly applicationsById = computed(
@@ -58,6 +69,15 @@ export class Jobs {
 
   constructor() {
     reloadOnRemoteChanges(() => this.load());
+  }
+
+  protected setView(view: JobsView): void {
+    this.view.set(view);
+    try {
+      localStorage.setItem(JOBS_VIEW_KEY, view);
+    } catch {
+      // Not remembered, but it still changes now
+    }
   }
 
   protected statsFor(jobId: number) {

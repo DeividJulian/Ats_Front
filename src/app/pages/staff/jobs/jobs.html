@@ -6,8 +6,8 @@
     </div>
     <div class="row">
       <div class="seg hide-m" role="group" aria-label="Vista">
-        <button type="button" class="seg__btn" [class.is-active]="view() === 'cards'" [attr.aria-pressed]="view() === 'cards'" (click)="view.set('cards')"><app-icon [icon]="i.LayoutGrid" [size]="16" />Tarjetas</button>
-        <button type="button" class="seg__btn" [class.is-active]="view() === 'table'" [attr.aria-pressed]="view() === 'table'" (click)="view.set('table')"><app-icon [icon]="i.List" [size]="16" />Tabla</button>
+        <button type="button" class="seg__btn" [class.is-active]="view() === 'cards'" [attr.aria-pressed]="view() === 'cards'" (click)="setView('cards')"><app-icon [icon]="i.LayoutGrid" [size]="16" />Tarjetas</button>
+        <button type="button" class="seg__btn" [class.is-active]="view() === 'table'" [attr.aria-pressed]="view() === 'table'" (click)="setView('table')"><app-icon [icon]="i.List" [size]="16" />Tabla</button>
       </div>
       <a class="btn btn--primary show-m" routerLink="/app/vacantes/nueva"><app-icon [icon]="i.Plus" [size]="18" />Nueva vacante</a>
     </div>
