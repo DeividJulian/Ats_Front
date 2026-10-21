@@ -24,4 +24,17 @@ describe('PdfDrop', () => {
     expect(sent).toHaveLength(0);
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('debe ser un PDF');
   });
+
+  it('tells screen readers the format and the size limit, and marks an invalid file', async () => {
+    const fixture = TestBed.createComponent(PdfDrop);
+    await fixture.whenStable();
+    const page = fixture.nativeElement as HTMLElement;
+    const input = page.querySelector<HTMLInputElement>('input[type=file]')!;
+    const hint = page.querySelector(`#${input.getAttribute('aria-describedby')}`)!;
+    expect(hint.textContent).toContain('5 MB');
+    expect(input.getAttribute('aria-invalid')).toBe('false');
+    fixture.componentRef.setInput('serverError', 'No es tuya');
+    fixture.detectChanges();
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+  });
 });

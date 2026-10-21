@@ -3,6 +3,8 @@ import { CircleAlert, CloudUpload } from 'lucide-angular';
 
 import { Icon } from './icon';
 
+let nextId = 0;
+
 export const MAX_PDF_BYTES = 5 * 1024 * 1024;
 
 /** Returns why a file can't be uploaded, or null if it is a valid PDF. */
@@ -27,7 +29,8 @@ export function pdfProblem(file: File): string | null {
       (dragleave)="over.set(false)"
       (drop)="onDrop($event)"
     >
-      <input type="file" accept="application/pdf,.pdf" [disabled]="busy()" (change)="onChoose($event)" [attr.aria-label]="text()" />
+      <input type="file" accept="application/pdf,.pdf" [disabled]="busy()" (change)="onChoose($event)" [attr.aria-label]="text()"
+             [attr.aria-describedby]="hintId" [attr.aria-invalid]="!!problem() || !!serverError()" />
       @if (busy()) {
         <span class="spinner spinner--lg t-primary"></span>
         <span class="t-strong">Leyendo la hoja de vida…</span>
@@ -35,7 +38,7 @@ export function pdfProblem(file: File): string | null {
       } @else {
         <span class="dropzone__icon"><app-icon [icon]="i.CloudUpload" [size]="24" /></span>
         <span class="t-strong">{{ text() }}</span>
-        <span class="t-small t-muted">Arrástralo aquí o <span class="t-primary t-strong">elige un archivo</span> · PDF de máximo 5 MB</span>
+        <span class="t-small t-muted" [id]="hintId">Arrástralo aquí o <span class="t-primary t-strong">elige un archivo</span> · PDF de máximo 5 MB</span>
       }
     </label>
     @if (problem() || serverError()) {
@@ -46,6 +49,8 @@ export function pdfProblem(file: File): string | null {
     :host { display: flex; flex-direction: column; gap: 8px; }
     .dropzone { position: relative; }
     .dropzone.busy { cursor: progress; }
+    /* The real input is invisible: the whole area shows the keyboard focus */
+    .dropzone:focus-within { border-color: var(--c-primary); box-shadow: var(--focus); }
     input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
   `,
 })
@@ -57,6 +62,8 @@ export class PdfDrop {
   readonly fileSelected = output<File>();
 
   protected readonly i = { CircleAlert, CloudUpload };
+  /** Unique id so each upload area points to its own hint. */
+  protected readonly hintId = `pdf-hint-${++nextId}`;
 
   protected readonly over = signal(false);
   protected readonly problem = signal<string | null>(null);
