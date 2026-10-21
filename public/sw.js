@@ -1,6 +1,7 @@
 // SERVICE WORKER: lets the app open and show the latest saved data without a connection.
 
-const VERSION = 'v1';
+// Raise it when the app changes in depth: browsers drop the old cached files on their own
+const VERSION = 'v2';
 const APP_CACHE = `ats-app-${VERSION}`;
 // Same name as API_CACHE in src/app/core/workers/api-cache.ts (the app clears it on logout)
 const API_CACHE = `ats-api-${VERSION}`;
@@ -12,7 +13,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(APP_CACHE)
-      .then((cache) => cache.addAll(['/', '/index.html']))
+      .then((cache) => cache.addAll(['/', '/index.html', '/favicon.svg']))
       .then(() => self.skipWaiting()),
   );
 });

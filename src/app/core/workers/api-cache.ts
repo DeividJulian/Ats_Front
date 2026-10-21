@@ -1,5 +1,5 @@
 /** Name of the cache where the Service Worker keeps backend answers (same as API_CACHE in public/sw.js). */
-export const API_CACHE = 'ats-api-v1';
+export const API_CACHE = 'ats-api-v2';
 
 /** Deletes the saved backend data, so the next person using this browser can't see it offline. */
 export async function clearApiCache(): Promise<void> {
