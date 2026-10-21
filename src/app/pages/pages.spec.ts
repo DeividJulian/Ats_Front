@@ -12,7 +12,7 @@ import { cleanCode } from './auth/code-step';
 import { Landing } from './landing/landing';
 import { timeline } from './portal/applications/applications';
 import { applicationCounts } from './portal/home/home';
-import { jobsWithFit } from './portal/jobs/jobs';
+import { jobsWithFit, onlyGoodFits } from './portal/jobs/jobs';
 import { profileChecklist, profileCompleteness } from './portal/profile-completeness';
 import { parsePastedResumes } from './staff/bulk-analysis/bulk-analysis';
 import { averageScore, greetingFor } from './staff/dashboard/dashboard';
@@ -201,6 +201,14 @@ describe('page helpers', () => {
     expect(items.map((i) => i.job.id)).toEqual([2, 1, 3]);
     expect(items[2].application?.status).toBe('new');
     expect(items[2].fit).toBeNull();
+  });
+
+  it('keeps only the jobs with a medium or high fit', () => {
+    const fit = (job_id: number, score: number): JobRecommendation => ({
+      job_id, title: '', score, classification: 'medium', matching_skills: [], missing_skills: [],
+    });
+    const items = jobsWithFit([JOB, { ...JOB, id: 2 }, { ...JOB, id: 3 }], [fit(1, 49.9), fit(2, 50)], []);
+    expect(onlyGoodFits(items).map((i) => i.job.id)).toEqual([2]);
   });
 
   it('splits pasted resumes on lines with ---', () => {

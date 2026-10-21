@@ -34,6 +34,14 @@ export function jobsWithFit(jobs: PublicJob[], fits: JobRecommendation[], applic
 
 type AreaFilter = 'all' | Area;
 
+/** Fit from which a job is worth applying (the "medium" classification starts here). */
+export const GOOD_FIT = 50;
+
+/** Jobs where the candidate already reaches a medium or high fit (jobs without a fit are left out). */
+export function onlyGoodFits(items: JobWithFit[]): JobWithFit[] {
+  return items.filter((i) => (i.fit?.score ?? 0) >= GOOD_FIT);
+}
+
 @Component({
   selector: 'app-portal-jobs',
   imports: [RouterLink, LabelPipe, AgoPipe, Icon, YearsPipe],
@@ -57,6 +65,7 @@ type AreaFilter = 'all' | Area;
             <option value="recent">Más recientes primero</option>
           </select>
         </span>
+        <label class="check"><input type="checkbox" [checked]="goodOnly()" (change)="goodOnly.set($any($event.target).checked)" /> Solo las que encajan</label>
       </div>
 
       @if (areaFilters().length > 2) {
@@ -152,6 +161,7 @@ export class PortalJobs {
   protected readonly search = signal('');
   protected readonly area = signal<AreaFilter>('all');
   protected readonly sort = signal<'fit' | 'recent'>('fit');
+  protected readonly goodOnly = signal(false);
   protected readonly applying = signal<number | null>(null);
 
   protected readonly areaFilters = computed(() => {
@@ -168,7 +178,8 @@ export class PortalJobs {
 
   protected readonly visible = computed(() => {
     const term = normalize(this.search().trim());
-    const list = this.items().filter(
+    const base = this.goodOnly() ? onlyGoodFits(this.items()) : this.items();
+    const list = base.filter(
       (i) =>
         (this.area() === 'all' || areaOf(i.job.required_skills) === this.area()) &&
         (!term || normalize(`${i.job.title} ${i.job.description} ${i.job.required_skills.join(' ')}`).includes(term)),
@@ -188,6 +199,7 @@ export class PortalJobs {
   protected clear(): void {
     this.search.set('');
     this.area.set('all');
+    this.goodOnly.set(false);
   }
 
   protected load(): void {
