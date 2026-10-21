@@ -1,14 +1,15 @@
 import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { EyeOff, ListOrdered, Sparkles, TriangleAlert } from 'lucide-angular';
+import { Download, EyeOff, ListOrdered, Sparkles, TriangleAlert } from 'lucide-angular';
 import { forkJoin, from, of } from 'rxjs';
 import { catchError, concatMap } from 'rxjs/operators';
 
-import { AiStatus, Application, Job, RankingItem } from '../../../core/models';
+import { AiEvaluation, AiStatus, Application, Job, RankingItem } from '../../../core/models';
 import { AiService, ApplicationService, JobService } from '../../../core/services/api.services';
 import { ToastService } from '../../../core/services/toast.service';
 import { errorMessage, initials } from '../../../core/utils/http-error';
-import { statusBadge } from '../../../core/utils/labels';
+import { csvFileName, downloadCsv, toCsv } from '../../../core/utils/csv';
+import { recommendationLabel, statusBadge, statusLabel } from '../../../core/utils/labels';
 import { reloadOnRemoteChanges } from '../../../core/workers/tab-sync.service';
 import { Icon } from '../../../shared/icon';
 import { LabelPipe } from '../../../shared/label.pipe';
@@ -25,6 +26,28 @@ export const COLUMN_LABELS: Record<(typeof BREAKDOWN_COLUMNS)[number], string> =
   education: 'Educación',
   text: 'Similitud',
 };
+
+/** The ranking as a spreadsheet. In anonymous mode no names or emails leave the screen. */
+export function rankingToCsv(
+  items: RankingItem[],
+  details: Record<number, Application>,
+  evaluations: Record<number, AiEvaluation>,
+  blind: boolean,
+): string {
+  const header = ['Posición', 'Candidato', 'Correo', 'Puntaje', ...BREAKDOWN_COLUMNS.map((c) => COLUMN_LABELS[c]), 'Estado', 'IA asesora'];
+  return toCsv(
+    header,
+    items.map((r) => [
+      r.position,
+      blind ? `Candidato ${r.position}` : r.name,
+      blind ? '' : r.email ?? '',
+      r.score,
+      ...BREAKDOWN_COLUMNS.map((c) => details[r.application_id]?.details.breakdown[c] ?? ''),
+      statusLabel(r.status),
+      evaluations[r.application_id] ? recommendationLabel(evaluations[r.application_id].recommendation) : 'Sin evaluar',
+    ]),
+  );
+}
 
 /** How many of the best candidates "Evaluar con IA" sends, one by one. */
 export const AI_BATCH = 5;
@@ -54,7 +77,7 @@ export class Ranking implements OnInit {
   private readonly router = inject(Router);
   private readonly cache = inject(EvaluationCache);
 
-  protected readonly i = { EyeOff, ListOrdered, Sparkles, TriangleAlert };
+  protected readonly i = { Download, EyeOff, ListOrdered, Sparkles, TriangleAlert };
   protected readonly columns = BREAKDOWN_COLUMNS;
   protected readonly batch = AI_BATCH;
   protected readonly columnLabels = COLUMN_LABELS;
@@ -143,6 +166,11 @@ export class Ranking implements OnInit {
 
   protected part(applicationId: number, key: string): number | null {
     return this.details()[applicationId]?.details.breakdown[key] ?? null;
+  }
+
+  protected exportCsv(): void {
+    const csv = rankingToCsv(this.ranking(), this.details(), this.evaluations(), this.blind());
+    downloadCsv(csvFileName('ranking', this.selected()?.title ?? 'vacante'), csv);
   }
 
   /** Sends the best candidates without an evaluation to the AI, one at a time. */

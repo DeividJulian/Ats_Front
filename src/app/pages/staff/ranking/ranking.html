@@ -112,6 +112,9 @@
         </tbody>
       </table>
     </div>
-    <p class="t-xs t-muted">La columna de IA es una opinión aparte: el orden siempre lo da el puntaje del sistema. Abre la vacante para ver el detalle de cada evaluación.</p>
+    <div class="row row--between">
+      <p class="t-xs t-muted">La columna de IA es una opinión aparte: el orden siempre lo da el puntaje del sistema. Abre la vacante para ver el detalle de cada evaluación.</p>
+      <button type="button" class="btn btn--secondary btn--sm" (click)="exportCsv()"><app-icon [icon]="i.Download" [size]="16" />Exportar CSV</button>
+    </div>
   }
 </div>
