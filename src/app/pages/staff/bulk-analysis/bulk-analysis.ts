@@ -36,6 +36,14 @@ export function resultsToCsv(results: ResumeResult[]): string {
 
 type Source = 'synthetic' | 'system' | 'pasted';
 
+/** From this many resumes the main thread freezes the screen for several seconds. */
+export const BIG_BATCH = 20_000;
+
+/** Only the main-thread mode with a big batch deserves a warning: the Web Worker never freezes the page. */
+export function needsFreezeWarning(mode: AnalysisMode, total: number): boolean {
+  return mode === 'main' && total > BIG_BATCH;
+}
+
 /** Measured during a run: how long the screen stopped repainting. */
 export interface RunWithFreeze extends AnalysisRun {
   /** Longest gap between two frames, in ms (more than ~100 ms is a visible freeze) */
@@ -177,6 +185,13 @@ export class BulkAnalysis implements OnInit {
     const job = this.buildJob();
     if (!job) {
       this.toasts.info('Primero crea o elige una vacante');
+      return;
+    }
+    const total = this.totalToAnalyze();
+    if (
+      needsFreezeWarning(mode, total) &&
+      !confirm(`Analizar ${total.toLocaleString('es-CO')} hojas de vida en el hilo principal congelará la pantalla unos segundos. ¿Continuar?`)
+    ) {
       return;
     }
     this.gapDuringRun = { max: 0, long: 0 };

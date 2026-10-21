@@ -14,7 +14,7 @@ import { timeline } from './portal/applications/applications';
 import { applicationCounts } from './portal/home/home';
 import { jobsWithFit, onlyGoodFits } from './portal/jobs/jobs';
 import { profileChecklist, profileCompleteness } from './portal/profile-completeness';
-import { parsePastedResumes } from './staff/bulk-analysis/bulk-analysis';
+import { BIG_BATCH, needsFreezeWarning, parsePastedResumes } from './staff/bulk-analysis/bulk-analysis';
 import { averageScore, greetingFor } from './staff/dashboard/dashboard';
 import { recommendationTone } from './staff/job-detail/application-review';
 import { BREAKDOWN_COLUMNS, COLUMN_LABELS } from './staff/ranking/ranking';
@@ -209,6 +209,12 @@ describe('page helpers', () => {
     });
     const items = jobsWithFit([JOB, { ...JOB, id: 2 }, { ...JOB, id: 3 }], [fit(1, 49.9), fit(2, 50)], []);
     expect(onlyGoodFits(items).map((i) => i.job.id)).toEqual([2]);
+  });
+
+  it('warns only before freezing the screen with a big batch on the main thread', () => {
+    expect(needsFreezeWarning('main', BIG_BATCH + 1)).toBe(true);
+    expect(needsFreezeWarning('main', BIG_BATCH)).toBe(false);
+    expect(needsFreezeWarning('worker', 50_000)).toBe(false);
   });
 
   it('splits pasted resumes on lines with ---', () => {
