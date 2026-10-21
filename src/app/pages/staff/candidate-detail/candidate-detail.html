@@ -17,7 +17,10 @@
           <h1 class="t-h1">{{ c.name }}</h1>
           <p class="t-muted">{{ (insights()?.main_area ?? 'general') | label: 'area' }} · {{ c.experience_years ? (c.experience_years | years) + ' de experiencia' : 'Sin experiencia registrada' }} · {{ c.education_level | label: 'education' }}</p>
           <div class="meta">
-            <span><app-icon [icon]="i.Mail" [size]="16" />{{ c.email }}</span>
+            <span>
+              <app-icon [icon]="i.Mail" [size]="16" /><a [href]="'mailto:' + c.email">{{ c.email }}</a>
+              <button type="button" class="btn btn--ghost btn--icon btn--sm copy" aria-label="Copiar correo" title="Copiar correo" (click)="copyEmail(c.email)"><app-icon [icon]="i.Copy" [size]="15" /></button>
+            </span>
             @if (c.phone) { <span><app-icon [icon]="i.Phone" [size]="16" />{{ c.phone }}</span> }
             <span><app-icon [icon]="i.Clock" [size]="16" />Registrado {{ (c.created_at | ago).toLowerCase() }}</span>
           </div>

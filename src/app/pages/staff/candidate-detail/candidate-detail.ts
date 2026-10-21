@@ -1,12 +1,13 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ChevronRight, Clock, CloudUpload, FileText, Mail, Pencil, Phone, Plus, TriangleAlert } from 'lucide-angular';
+import { ChevronRight, Clock, CloudUpload, Copy, FileText, Mail, Pencil, Phone, Plus, TriangleAlert } from 'lucide-angular';
 import { forkJoin } from 'rxjs';
 
 import { Application, Candidate, CandidateInsights, Job, JobRecommendation } from '../../../core/models';
 import { ApplicationService, CandidateService, JobService } from '../../../core/services/api.services';
 import { ToastService } from '../../../core/services/toast.service';
 import { errorMessage, initials } from '../../../core/utils/http-error';
+import { copyText } from '../../../core/utils/clipboard';
 import { statusBadge } from '../../../core/utils/labels';
 import { reloadOnRemoteChanges } from '../../../core/workers/tab-sync.service';
 import { AgoPipe } from '../../../shared/ago.pipe';
@@ -31,6 +32,7 @@ import { YearsPipe } from '../../../shared/years.pipe';
     .title-link { color: var(--c-text); display: block; }
     .title-link:hover { color: var(--c-primary); }
     .resume { max-height: 420px; color: var(--c-text); }
+    .copy { width: 32px; min-height: 32px; margin: -6px 0; }
   `,
 })
 export class CandidateDetail {
@@ -42,7 +44,7 @@ export class CandidateDetail {
   private readonly jobsApi = inject(JobService);
   private readonly toasts = inject(ToastService);
 
-  protected readonly i = { ChevronRight, Clock, CloudUpload, FileText, Mail, Pencil, Phone, Plus, TriangleAlert };
+  protected readonly i = { ChevronRight, Clock, CloudUpload, Copy, FileText, Mail, Pencil, Phone, Plus, TriangleAlert };
   protected readonly statusBadge = statusBadge;
   protected readonly tone = scoreTone;
   protected readonly pdfOpen = signal(false);
@@ -127,6 +129,11 @@ export class CandidateDetail {
         this.toasts.error(errorMessage(e));
       },
     });
+  }
+
+  protected async copyEmail(email: string): Promise<void> {
+    if (await copyText(email)) this.toasts.ok('Correo copiado');
+    else this.toasts.info(email);
   }
 
   protected scrollTo(id: string): void {
