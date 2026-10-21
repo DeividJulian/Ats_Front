@@ -145,6 +145,13 @@ export class PublicJobPage implements OnInit {
   protected readonly applied = signal(false);
 
   ngOnInit(): void {
+    // A candidate who already applied sees it, instead of a button that would only answer "already applied"
+    if (this.auth.role() === 'candidate') {
+      this.portal.applications().subscribe({
+        next: (list) => this.applied.set(list.some((a) => a.job_id === Number(this.id()))),
+        error: () => undefined,
+      });
+    }
     this.publicApi.job(Number(this.id())).subscribe({
       next: (job) => {
         this.job.set(job);
