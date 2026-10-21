@@ -21,7 +21,7 @@ export function pdfProblem(file: File): string | null {
     <label
       class="dropzone"
       [class.is-over]="over()"
-      [class.is-error]="!!problem()"
+      [class.is-error]="!!problem() || !!serverError()"
       [class.busy]="busy()"
       (dragover)="$event.preventDefault(); over.set(true)"
       (dragleave)="over.set(false)"
@@ -38,8 +38,8 @@ export function pdfProblem(file: File): string | null {
         <span class="t-small t-muted">Arrástralo aquí o <span class="t-primary t-strong">elige un archivo</span> · PDF de máximo 5 MB</span>
       }
     </label>
-    @if (problem()) {
-      <span class="field__error" role="alert"><app-icon [icon]="i.CircleAlert" [size]="15" />{{ problem() }}</span>
+    @if (problem() || serverError()) {
+      <span class="field__error" role="alert"><app-icon [icon]="i.CircleAlert" [size]="15" />{{ problem() || serverError() }}</span>
     }
   `,
   styles: `
@@ -52,6 +52,8 @@ export function pdfProblem(file: File): string | null {
 export class PdfDrop {
   readonly text = input('Sube la hoja de vida en PDF');
   readonly busy = input(false);
+  /** Why the server rejected the last file (for example, a resume that belongs to someone else). */
+  readonly serverError = input<string | null>(null);
   readonly fileSelected = output<File>();
 
   protected readonly i = { CircleAlert, CloudUpload };

@@ -35,6 +35,7 @@ export class PortalProfile {
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly uploading = signal(false);
+  protected readonly uploadError = signal<string | null>(null);
   protected readonly skills = signal<string[]>([]);
   protected readonly newSkill = signal('');
 
@@ -137,6 +138,7 @@ export class PortalProfile {
 
   protected upload(file: File): void {
     this.uploading.set(true);
+    this.uploadError.set(null);
     this.portal.uploadResume(file).subscribe({
       next: (profile) => {
         this.uploading.set(false);
@@ -146,6 +148,7 @@ export class PortalProfile {
       },
       error: (e) => {
         this.uploading.set(false);
+        this.uploadError.set(errorMessage(e));
         this.toasts.error(errorMessage(e));
       },
     });

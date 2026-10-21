@@ -60,7 +60,7 @@
             @if (showResume()) { <p class="pre resume">{{ c.resume_text }}</p> }
           } @else {
             <p class="t-small t-muted">Sin hoja de vida todavía: súbela para mejorar el ajuste.</p>
-            <app-pdf-drop text="Subir la hoja de vida en PDF" [busy]="uploading()" (fileSelected)="upload($event)" />
+            <app-pdf-drop text="Subir la hoja de vida en PDF" [busy]="uploading()" [serverError]="uploadError()" (fileSelected)="upload($event)" />
           }
         </section>
 
@@ -117,7 +117,7 @@
     }
     @if (pdfOpen()) {
       <app-modal title="Hoja de vida en PDF" (closed)="pdfOpen.set(false)">
-        <app-pdf-drop [text]="c.resume_text ? 'Reemplazar la hoja de vida' : 'Subir la hoja de vida'" [busy]="uploading()" (fileSelected)="upload($event)" />
+        <app-pdf-drop [text]="c.resume_text ? 'Reemplazar la hoja de vida' : 'Subir la hoja de vida'" [busy]="uploading()" [serverError]="uploadError()" (fileSelected)="upload($event)" />
         <p class="t-small t-muted">El sistema vuelve a leer habilidades, experiencia y educación, y recalcula el ajuste de sus postulaciones.</p>
       </app-modal>
     }

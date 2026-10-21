@@ -56,6 +56,7 @@ export class CandidateDetail {
   protected readonly error = signal<string | null>(null);
   protected readonly editing = signal(false);
   protected readonly uploading = signal(false);
+  protected readonly uploadError = signal<string | null>(null);
   protected readonly showResume = signal(false);
 
   protected readonly initials = computed(() => initials(this.candidate()?.name));
@@ -97,6 +98,7 @@ export class CandidateDetail {
 
   protected upload(file: File): void {
     this.uploading.set(true);
+    this.uploadError.set(null);
     this.api.uploadResume(Number(this.id()), file).subscribe({
       next: (c) => {
         this.uploading.set(false);
@@ -106,6 +108,7 @@ export class CandidateDetail {
       },
       error: (e) => {
         this.uploading.set(false);
+        this.uploadError.set(errorMessage(e));
         this.toasts.error(errorMessage(e));
       },
     });

@@ -87,7 +87,7 @@
           @if (profile()?.resume_text) {
             <div class="alert alert--success"><app-icon [icon]="i.CircleCheck" [size]="20" /><div class="alert__body">Tu hoja de vida está cargada y tenemos {{ profile()?.skills?.length }} habilidades. Sube otra para reemplazarla.</div></div>
           }
-          <app-pdf-drop [text]="profile()?.resume_text ? 'Reemplazar mi hoja de vida' : 'Arrastra tu PDF aquí'" [busy]="uploading()" (fileSelected)="upload($event)" />
+          <app-pdf-drop [text]="profile()?.resume_text ? 'Reemplazar mi hoja de vida' : 'Arrastra tu PDF aquí'" [busy]="uploading()" [serverError]="uploadError()" (fileSelected)="upload($event)" />
         </section>
 
         @if (completeness(); as c) {
