@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 
 import { API_URL } from '../../core/config/api.config';
 import { USER, fakeToken } from '../../../testing/fixtures';
-import { CodeStep } from './code-step';
+import { CodeStep, inboxFor } from './code-step';
 
 function setup() {
   TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
@@ -48,5 +48,14 @@ describe('CodeStep', () => {
     fixture.detectChanges();
     expect(page.textContent).toContain('Reenviar código');
     vi.useRealTimers();
+  });
+});
+
+describe('inboxFor', () => {
+  it('opens the inbox of the usual providers', () => {
+    expect(inboxFor('deivid+camila@gmail.com')?.label).toBe('Abrir Gmail');
+    expect(inboxFor('ana@Hotmail.com')?.label).toBe('Abrir Outlook');
+    expect(inboxFor('luis@yahoo.es')?.label).toBe('Abrir Yahoo Mail');
+    expect(inboxFor('laura@empresa.com')).toBeNull();
   });
 });
