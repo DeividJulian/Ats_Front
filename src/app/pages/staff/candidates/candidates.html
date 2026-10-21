@@ -15,6 +15,14 @@
       <app-icon [icon]="i.Search" [size]="20" />
       <input class="input" type="search" placeholder="Nombre, correo o habilidad (ej. Power BI)" aria-label="Buscar candidatos" (input)="search.set($any($event.target).value)" />
     </span>
+    <span class="control sort">
+      <select class="select" aria-label="Ordenar candidatos" (change)="sort.set($any($event.target).value)">
+        <option value="recent">Más recientes</option>
+        <option value="name">Nombre (A-Z)</option>
+        <option value="experience">Más experiencia</option>
+        <option value="skills">Más habilidades</option>
+      </select>
+    </span>
     <span class="t-small t-muted" aria-live="polite">{{ visible().length }} resultados · {{ withResume() }} con hoja de vida</span>
   </div>
 

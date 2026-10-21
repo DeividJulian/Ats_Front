@@ -4,3 +4,4 @@
 .area-chip { min-height: 26px; }
 .upload { position: relative; overflow: hidden; }
 .upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.toolbar .sort { flex: 0 1 200px; }

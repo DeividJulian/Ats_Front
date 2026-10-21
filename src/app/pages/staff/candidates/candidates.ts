@@ -16,6 +16,19 @@ import { pdfProblem } from '../../../shared/pdf-drop';
 import { YearsPipe } from '../../../shared/years.pipe';
 
 type AreaFilter = 'all' | Area;
+export type CandidateSort = 'recent' | 'name' | 'experience' | 'skills';
+
+/** Copy of the list in the chosen order; ties keep the most recent first. */
+export function sortCandidates(list: Candidate[], sort: CandidateSort): Candidate[] {
+  const recent = (a: Candidate, b: Candidate) => b.created_at.localeCompare(a.created_at) || b.id - a.id;
+  const by: Record<CandidateSort, (a: Candidate, b: Candidate) => number> = {
+    recent,
+    name: (a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }),
+    experience: (a, b) => (b.experience_years ?? 0) - (a.experience_years ?? 0) || recent(a, b),
+    skills: (a, b) => b.skills.length - a.skills.length || recent(a, b),
+  };
+  return [...list].sort(by[sort]);
+}
 
 /** Talent bank: search, filter by area, upload resumes and open each profile. */
 @Component({
@@ -37,6 +50,7 @@ export class Candidates {
   protected readonly error = signal<string | null>(null);
   protected readonly search = signal('');
   protected readonly area = signal<AreaFilter>('all');
+  protected readonly sort = signal<CandidateSort>('recent');
   protected readonly uploadingFor = signal<number | null>(null);
 
   /** Each candidate with its professional area, computed from the skills. */
@@ -54,11 +68,12 @@ export class Candidates {
 
   protected readonly visible = computed(() => {
     const term = normalize(this.search().trim());
+    const order = new Map(sortCandidates(this.candidates(), this.sort()).map((c, i) => [c.id, i]));
     return this.withArea().filter(
       ({ c, area }) =>
         (this.area() === 'all' || area === this.area()) &&
         (!term || normalize(`${c.name} ${c.email} ${c.skills.join(' ')}`).includes(term)),
-    );
+    ).sort((a, b) => (order.get(a.c.id) ?? 0) - (order.get(b.c.id) ?? 0));
   });
 
   protected readonly withResume = computed(() => this.candidates().filter((c) => c.resume_text.trim()).length);
