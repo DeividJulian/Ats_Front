@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -116,6 +116,13 @@ export class Shell {
     if (!this.isCandidate()) {
       this.ai.status().subscribe({ next: (s) => this.aiStatus.set(s), error: () => this.aiStatus.set(null) });
     }
+  }
+
+  /** Escape closes whatever menu is open, as keyboard users expect. */
+  @HostListener('document:keydown.escape')
+  protected closeMenus(): void {
+    this.menuOpen.set(false);
+    this.moreOpen.set(false);
   }
 
   protected logout(): void {

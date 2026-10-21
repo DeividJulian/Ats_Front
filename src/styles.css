@@ -644,3 +644,8 @@ code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-si
 /* Page container of every screen */
 .page { max-width: 1240px; margin: 0 auto; padding: 28px 32px 56px; display: flex; flex-direction: column; gap: 24px; }
 @media (max-width: 760px) { .page { padding: 20px 16px 28px; gap: 18px; } }
+
+/* Keyboard users can jump over the menu straight to the page */
+.skip-link { position: absolute; left: 12px; top: -60px; z-index: 100; padding: 10px 16px; border-radius: 12px; background: var(--c-primary); color: var(--c-on-primary); font-weight: 700; text-decoration: none; transition: top .15s; }
+.skip-link:focus { top: 12px; color: var(--c-on-primary); }
+main:focus { outline: none; }
