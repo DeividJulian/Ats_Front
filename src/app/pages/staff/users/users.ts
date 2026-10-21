@@ -50,6 +50,8 @@ export class Users {
   protected readonly roleFilter = signal<'all' | Role>('all');
   protected readonly stateFilter = signal<AccountState>('all');
   protected readonly users = signal<User[]>([]);
+  /** Account whose access code is being sent. */
+  protected readonly sendingTo = signal<number | null>(null);
   protected readonly visible = computed(() => {
     const term = normalize(this.search().trim());
     return this.users().filter(
@@ -139,6 +141,21 @@ export class Users {
 
   protected toggleActive(user: User): void {
     this.update(user, { is_active: !user.is_active }, user.is_active ? `${user.name} quedó desactivado` : `${user.name} quedó activo`);
+  }
+
+  /** Emails the access code, the same one the person would get from the login page. */
+  protected sendCode(user: User): void {
+    this.sendingTo.set(user.id);
+    this.auth.requestCode(user.email).subscribe({
+      next: () => {
+        this.sendingTo.set(null);
+        this.toasts.ok(`Le enviamos a ${user.name} un código para entrar (${user.email})`);
+      },
+      error: (e) => {
+        this.sendingTo.set(null);
+        this.toasts.error(errorMessage(e));
+      },
+    });
   }
 
   protected remove(user: User): void {
