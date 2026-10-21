@@ -30,6 +30,13 @@ import { Icon } from '../../shared/icon';
 import { LabelPipe } from '../../shared/label.pipe';
 import { YearsPipe } from '../../shared/years.pipe';
 
+/** "3 vacantes abiertas", or how many matched the search. */
+export function jobCountLabel(total: number, shown: number, searching: boolean): string {
+  const word = (n: number) => (n === 1 ? 'vacante' : 'vacantes');
+  if (searching) return `${shown} de ${total} ${word(total)} coinciden con tu búsqueda`;
+  return total === 1 ? '1 vacante abierta' : `${total} vacantes abiertas`;
+}
+
 /** Ranking shown in the hero, to explain the product at a glance. */
 export const SAMPLE_RANKING = [
   { name: 'Laura Valentina Gómez', initials: 'LG', score: 88, tone: 'alto' },
@@ -70,6 +77,9 @@ export class Landing implements OnInit {
   });
 
   protected readonly home = computed(() => homeFor(this.auth.role()));
+  protected readonly countLabel = computed(() =>
+    jobCountLabel(this.jobs().length, this.visibleJobs().length, this.search().trim().length > 0),
+  );
 
   ngOnInit(): void {
     this.load();

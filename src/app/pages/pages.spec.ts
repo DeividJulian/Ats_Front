@@ -9,7 +9,7 @@ import { USER, fakeToken } from '../../testing/fixtures';
 import { Login } from './auth/login';
 import { Register } from './auth/register';
 import { cleanCode } from './auth/code-step';
-import { Landing } from './landing/landing';
+import { Landing, jobCountLabel } from './landing/landing';
 import { timeline } from './portal/applications/applications';
 import { applicationCounts } from './portal/home/home';
 import { jobsWithFit, onlyGoodFits } from './portal/jobs/jobs';
@@ -58,6 +58,12 @@ describe('Landing page', () => {
     await fixture.whenStable();
     expect(page.querySelectorAll('.job')).toHaveLength(1);
     expect(page.querySelector('.job h3')?.textContent).toContain('Desarrollador Python');
+  });
+
+  it('counts the open jobs and the search results', () => {
+    expect(jobCountLabel(3, 3, false)).toBe('3 vacantes abiertas');
+    expect(jobCountLabel(1, 1, false)).toBe('1 vacante abierta');
+    expect(jobCountLabel(3, 1, true)).toBe('1 de 3 vacantes coinciden con tu búsqueda');
   });
 
   it('offers to retry when the server does not answer', async () => {

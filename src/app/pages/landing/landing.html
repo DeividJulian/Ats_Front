@@ -125,6 +125,9 @@
         <div class="section__head" style="margin-bottom: 0">
           <span class="eyebrow">Vacantes abiertas</span>
           <h2 class="t-h1">Empleos publicados</h2>
+          @if (!loading() && !error()) {
+            <p class="t-muted job-count" aria-live="polite">{{ countLabel() }}</p>
+          }
         </div>
         <span class="control control--icon job-search">
           <app-icon [icon]="i.Search" [size]="20" />
