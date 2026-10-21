@@ -6,6 +6,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { PublicJob } from '../../core/models';
 import { PortalService, PublicService } from '../../core/services/api.services';
 import { ToastService } from '../../core/services/toast.service';
+import { copyText, publicJobUrl } from '../../core/utils/clipboard';
 import { errorMessage, initials } from '../../core/utils/http-error';
 import { PublicHeader } from '../../layout/public-header';
 import { AgoPipe } from '../../shared/ago.pipe';
@@ -181,15 +182,14 @@ export class PublicJobPage implements OnInit {
   }
 
   /** Native share sheet on phones; on computers the link goes to the clipboard. */
-  protected share(job: PublicJob): void {
-    const url = location.href;
+  protected async share(job: PublicJob): Promise<void> {
+    // Always the clean public address (without query parameters such as ?redirect)
+    const url = publicJobUrl(job.id);
     if (navigator.share) {
       navigator.share({ title: job.title, url }).catch(() => undefined);
       return;
     }
-    navigator.clipboard?.writeText(url).then(
-      () => this.toasts.ok('Enlace copiado: pégalo donde quieras compartirlo'),
-      () => this.toasts.info(url),
-    );
+    if (await copyText(url)) this.toasts.ok('Enlace copiado: pégalo donde quieras compartirlo');
+    else this.toasts.info(url);
   }
 }

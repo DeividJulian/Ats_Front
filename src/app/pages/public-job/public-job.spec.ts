@@ -47,4 +47,15 @@ describe('Public job page', () => {
     const page = await open(null);
     expect(page.textContent).toContain('Crear cuenta y postularme');
   });
+
+  it('shares the clean public address of the job', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
+    const page = await open(null);
+    const button = [...page.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Compartir'))!;
+    button.click();
+    await Promise.resolve();
+    expect(writeText).toHaveBeenCalledWith(`${location.origin}/empleos/3`);
+    vi.unstubAllGlobals();
+  });
 });
