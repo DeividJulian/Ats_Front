@@ -20,6 +20,14 @@
         <option value="candidate">Candidato</option>
       </select>
     </span>
+    <span class="control role-filter">
+      <select class="select" aria-label="Filtrar por estado" (change)="stateFilter.set($any($event.target).value)">
+        <option value="all">Todos los estados</option>
+        <option value="active">Activos</option>
+        <option value="unverified">Sin verificar</option>
+        <option value="inactive">Desactivados</option>
+      </select>
+    </span>
   </div>
 
   @if (loading()) {

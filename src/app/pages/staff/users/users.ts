@@ -14,6 +14,14 @@ import { LabelPipe } from '../../../shared/label.pipe';
 import { Icon } from '../../../shared/icon';
 import { Modal } from '../../../shared/modal';
 
+export type AccountState = 'all' | 'active' | 'unverified' | 'inactive';
+
+/** Where an account stands: deactivated, waiting for its first code, or in use. */
+export function accountState(user: User): Exclude<AccountState, 'all'> {
+  if (!user.is_active) return 'inactive';
+  return user.verified ? 'active' : 'unverified';
+}
+
 @Component({
   selector: 'app-users',
   imports: [ReactiveFormsModule, DatePipe, LabelPipe, Icon, Modal],
@@ -40,12 +48,14 @@ export class Users {
   protected readonly aiStatus = signal<AiStatus | null>(null);
   protected readonly search = signal('');
   protected readonly roleFilter = signal<'all' | Role>('all');
+  protected readonly stateFilter = signal<AccountState>('all');
   protected readonly users = signal<User[]>([]);
   protected readonly visible = computed(() => {
     const term = normalize(this.search().trim());
     return this.users().filter(
       (u) =>
         (this.roleFilter() === 'all' || u.role === this.roleFilter()) &&
+        (this.stateFilter() === 'all' || accountState(u) === this.stateFilter()) &&
         (!term || normalize(`${u.name} ${u.email}`).includes(term)),
     );
   });
