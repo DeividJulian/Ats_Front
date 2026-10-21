@@ -8,6 +8,7 @@ import { Candidate, CandidateInsights, EducationLevel, ProfileInput } from '../.
 import { PortalService } from '../../../core/services/api.services';
 import { ToastService } from '../../../core/services/toast.service';
 import { errorMessage } from '../../../core/utils/http-error';
+import { HasUnsavedChanges } from '../../../core/auth/unsaved-changes.guard';
 import { EDUCATION_LEVELS } from '../../../core/utils/labels';
 import { canonicalizeSkills } from '../../../core/workers/cv-analysis.logic';
 import { Icon } from '../../../shared/icon';
@@ -23,7 +24,7 @@ import { profileChecklist, profileCompleteness } from '../profile-completeness';
     .ok { color: var(--c-success); }
   `,
 })
-export class PortalProfile {
+export class PortalProfile implements HasUnsavedChanges {
   private readonly portal = inject(PortalService);
   private readonly toasts = inject(ToastService);
   private readonly auth = inject(AuthService);
@@ -89,6 +90,15 @@ export class PortalProfile {
       education_level: profile.education_level ?? '',
       resume_text: profile.resume_text,
     });
+    // What the server has is the new starting point: nothing is pending
+    this.form.markAsPristine();
+  }
+
+  /** Edited data or skills that were not saved yet. */
+  hasUnsavedChanges(): boolean {
+    const saved = this.profile()?.skills ?? [];
+    const skillsChanged = saved.length !== this.skills().length || saved.some((s, i) => s !== this.skills()[i]);
+    return (this.form.dirty || skillsChanged) && !this.saving();
   }
 
   private refreshInsights(): void {

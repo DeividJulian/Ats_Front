@@ -33,4 +33,11 @@ describe('unsavedChangesGuard', () => {
       expect(app.children!.find((r) => r.path === path)!.canDeactivate).toContain(unsavedChangesGuard);
     }
   });
+
+  it('protects the candidate registration and the candidate profile', () => {
+    const app = routes.find((r) => r.path === 'app')!;
+    const portal = routes.find((r) => r.path === 'portal')!;
+    expect(app.children!.find((r) => r.path === 'candidatos/nuevo')!.canDeactivate).toContain(unsavedChangesGuard);
+    expect(portal.children!.find((r) => r.path === 'perfil')!.canDeactivate).toContain(unsavedChangesGuard);
+  });
 });

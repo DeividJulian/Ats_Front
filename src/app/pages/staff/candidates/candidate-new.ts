@@ -8,6 +8,7 @@ import { AiStatus, EducationLevel, ResumeAnalysis } from '../../../core/models';
 import { AiService, CandidateService } from '../../../core/services/api.services';
 import { ToastService } from '../../../core/services/toast.service';
 import { errorMessage } from '../../../core/utils/http-error';
+import { HasUnsavedChanges } from '../../../core/auth/unsaved-changes.guard';
 import { EDUCATION_LEVELS, aiProviderLabel } from '../../../core/utils/labels';
 import { canonicalizeSkills } from '../../../core/workers/cv-analysis.logic';
 import { Icon } from '../../../shared/icon';
@@ -27,7 +28,7 @@ import { YearsPipe } from '../../../shared/years.pipe';
     @media (max-width: 1100px) { .side { position: static; } }
   `,
 })
-export class CandidateNew {
+export class CandidateNew implements HasUnsavedChanges {
   private readonly api = inject(CandidateService);
   private readonly ai = inject(AiService);
   private readonly toasts = inject(ToastService);
@@ -64,6 +65,11 @@ export class CandidateNew {
 
   constructor() {
     this.ai.status().subscribe({ next: (s) => this.aiStatus.set(s), error: () => this.aiStatus.set(null) });
+  }
+
+  /** Pasted or typed something that was not saved yet (while saving, leaving is expected). */
+  hasUnsavedChanges(): boolean {
+    return (this.form.dirty || this.skills().length > 0) && !this.saving() && !this.reading();
   }
 
   protected invalid(name: keyof typeof this.form.controls): boolean {
