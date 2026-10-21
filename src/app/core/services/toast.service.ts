@@ -6,6 +6,9 @@ export interface Toast {
   text: string;
 }
 
+/** More than this covers the screen on a phone: the oldest ones go away. */
+export const MAX_TOASTS = 4;
+
 /** Short notifications in the corner of the screen. */
 @Injectable({ providedIn: 'root' })
 export class ToastService {
@@ -29,8 +32,10 @@ export class ToastService {
   }
 
   private push(kind: Toast['kind'], text: string, ms: number): void {
+    // The same message twice in a row (a button pressed again) is shown once
+    if (this.toasts().some((t) => t.kind === kind && t.text === text)) return;
     const id = this.nextId++;
-    this.toasts.update((list) => [...list, { id, kind, text }]);
+    this.toasts.update((list) => [...list, { id, kind, text }].slice(-MAX_TOASTS));
     setTimeout(() => this.dismiss(id), ms);
   }
 }
