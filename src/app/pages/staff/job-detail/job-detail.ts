@@ -1,11 +1,12 @@
 import { Component, computed, inject, input, signal, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Briefcase, ChevronRight, Clock, ExternalLink, GraduationCap, Lock, Pencil, RefreshCw, RotateCcw, TriangleAlert } from 'lucide-angular';
+import { Briefcase, ChevronRight, Clock, ExternalLink, GraduationCap, Link, Lock, Pencil, RefreshCw, RotateCcw, TriangleAlert } from 'lucide-angular';
 
 import { Job } from '../../../core/models';
 import { JobService } from '../../../core/services/api.services';
 import { ToastService } from '../../../core/services/toast.service';
 import { areaOf } from '../../../core/utils/areas';
+import { copyText, publicJobUrl } from '../../../core/utils/clipboard';
 import { errorMessage } from '../../../core/utils/http-error';
 import { reloadOnRemoteChanges } from '../../../core/workers/tab-sync.service';
 import { AgoPipe } from '../../../shared/ago.pipe';
@@ -37,7 +38,7 @@ export class JobDetail {
   private readonly toasts = inject(ToastService);
   private readonly board = viewChild(RankingBoard);
 
-  protected readonly i = { Briefcase, ChevronRight, Clock, ExternalLink, GraduationCap, Lock, Pencil, RefreshCw, RotateCcw, TriangleAlert };
+  protected readonly i = { Briefcase, ChevronRight, Clock, ExternalLink, GraduationCap, Link, Lock, Pencil, RefreshCw, RotateCcw, TriangleAlert };
   protected readonly job = signal<Job | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
@@ -75,6 +76,13 @@ export class JobDetail {
         this.toasts.error(errorMessage(e));
       },
     });
+  }
+
+  /** The public link of the job, to share with candidates. */
+  protected async copyLink(job: Job): Promise<void> {
+    const url = publicJobUrl(job.id);
+    if (await copyText(url)) this.toasts.ok('Enlace copiado: compártelo con los candidatos');
+    else this.toasts.info(url);
   }
 
   protected toggleStatus(job: Job): void {

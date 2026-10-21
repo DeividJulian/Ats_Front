@@ -26,6 +26,7 @@
         </button>
         <a class="btn btn--secondary hide-m" routerLink="/app/ranking" [queryParams]="{ vacante: job.id }">Ver ranking</a>
         @if (job.status === 'open') {
+          <button type="button" class="btn btn--secondary" (click)="copyLink(job)"><app-icon [icon]="i.Link" [size]="18" />Copiar enlace</button>
           <a class="btn btn--ghost hide-m" [routerLink]="['/empleos', job.id]" target="_blank"><app-icon [icon]="i.ExternalLink" [size]="18" />Como candidato</a>
         }
         <button type="button" [class]="job.status === 'open' ? 'btn btn--danger-ghost' : 'btn btn--secondary'" (click)="toggleStatus(job)">
