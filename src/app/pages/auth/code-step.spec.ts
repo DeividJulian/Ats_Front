@@ -39,6 +39,22 @@ describe('CodeStep', () => {
     backend.expectNone(`${API_URL}/auth/verify`);
   });
 
+  it('after resending, clears the field and puts the cursor back in it', async () => {
+    vi.useFakeTimers();
+    const { fixture, backend, page } = setup();
+    fixture.detectChanges();
+    vi.advanceTimersByTime(30_000);
+    fixture.detectChanges();
+    type(page, '12');
+    [...page.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Reenviar código'))!.click();
+    backend.expectOne(`${API_URL}/auth/login`).flush({ message: 'ok', email: 'laura@empresa.com' });
+    fixture.detectChanges();
+    const input = page.querySelector<HTMLInputElement>('input#code')!;
+    expect(input.value).toBe('');
+    expect(document.activeElement).toBe(input);
+    vi.useRealTimers();
+  });
+
   it('counts down before allowing to resend', async () => {
     vi.useFakeTimers();
     const { fixture, page } = setup();

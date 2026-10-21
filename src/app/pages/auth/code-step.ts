@@ -147,6 +147,8 @@ export class CodeStep implements OnInit {
         this.code.reset();
         this.toasts.info('Te enviamos un código nuevo');
         this.startCooldown();
+        // The old code no longer works: the cursor waits for the new one
+        this.codeInput()?.nativeElement.focus();
       },
       error: (e) => {
         this.resending.set(false);
