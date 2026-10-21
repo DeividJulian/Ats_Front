@@ -8,6 +8,7 @@ import { AiStatus, EducationLevel, JobInput } from '../../../core/models';
 import { AiService, JobService } from '../../../core/services/api.services';
 import { ToastService } from '../../../core/services/toast.service';
 import { errorMessage, splitList } from '../../../core/utils/http-error';
+import { HasUnsavedChanges } from '../../../core/auth/unsaved-changes.guard';
 import { EDUCATION_LEVELS } from '../../../core/utils/labels';
 import { canonicalizeSkills, extractSkills } from '../../../core/workers/cv-analysis.logic';
 import { Icon } from '../../../shared/icon';
@@ -24,7 +25,7 @@ import { LabelPipe } from '../../../shared/label.pipe';
     @media (max-width: 1100px) { .side { position: static; } }
   `,
 })
-export class JobForm implements OnInit {
+export class JobForm implements OnInit, HasUnsavedChanges {
   /** Route parameter: present when editing (/app/vacantes/:id/editar) */
   readonly id = input<string>();
 
@@ -88,6 +89,11 @@ export class JobForm implements OnInit {
         void this.router.navigateByUrl('/app/vacantes');
       },
     });
+  }
+
+  /** Typed something and did not save it (after saving, leaving is fine). */
+  hasUnsavedChanges(): boolean {
+    return this.form.dirty && !this.saving();
   }
 
   protected invalid(name: keyof typeof this.form.controls): boolean {

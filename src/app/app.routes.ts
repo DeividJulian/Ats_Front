@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { authGuard, guestGuard, roleGuard } from './core/auth/auth.guards';
+import { unsavedChangesGuard } from './core/auth/unsaved-changes.guard';
 
 const page = (title: string) => `${title} · Portal ATS`;
 
@@ -19,9 +20,9 @@ export const routes: Routes = [
     children: [
       { path: '', title: page('Panel'), loadComponent: () => import('./pages/staff/dashboard/dashboard').then((m) => m.Dashboard) },
       { path: 'vacantes', title: page('Vacantes'), loadComponent: () => import('./pages/staff/jobs/jobs').then((m) => m.Jobs) },
-      { path: 'vacantes/nueva', title: page('Nueva vacante'), loadComponent: () => import('./pages/staff/job-form/job-form').then((m) => m.JobForm) },
+      { path: 'vacantes/nueva', title: page('Nueva vacante'), canDeactivate: [unsavedChangesGuard], loadComponent: () => import('./pages/staff/job-form/job-form').then((m) => m.JobForm) },
       { path: 'vacantes/:id', title: page('Vacante'), loadComponent: () => import('./pages/staff/job-detail/job-detail').then((m) => m.JobDetail) },
-      { path: 'vacantes/:id/editar', title: page('Editar vacante'), loadComponent: () => import('./pages/staff/job-form/job-form').then((m) => m.JobForm) },
+      { path: 'vacantes/:id/editar', title: page('Editar vacante'), canDeactivate: [unsavedChangesGuard], loadComponent: () => import('./pages/staff/job-form/job-form').then((m) => m.JobForm) },
       { path: 'ranking', title: page('Ranking'), loadComponent: () => import('./pages/staff/ranking/ranking').then((m) => m.Ranking) },
       { path: 'candidatos', title: page('Candidatos'), loadComponent: () => import('./pages/staff/candidates/candidates').then((m) => m.Candidates) },
       { path: 'candidatos/nuevo', title: page('Registrar candidato'), loadComponent: () => import('./pages/staff/candidates/candidate-new').then((m) => m.CandidateNew) },
