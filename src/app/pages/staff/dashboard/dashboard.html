@@ -2,9 +2,12 @@
   <div class="page-head">
     <div class="page-head__text">
       <h1 class="t-h1">{{ greeting() }}, {{ firstName() }}</h1>
-      <p class="t-muted">Así van tus procesos de selección.</p>
+      <p class="t-muted">Así van tus procesos de selección.@if (updatedAt(); as at) { <span class="t-small"> · Actualizado a las {{ at | date: 'h:mm a' }}</span> }</p>
     </div>
     <div class="row">
+      <button type="button" class="btn btn--ghost" [class.is-loading]="refreshing()" [disabled]="refreshing()" (click)="load()" title="Volver a leer los datos">
+        @if (refreshing()) { <span class="spinner"></span> } @else { <app-icon [icon]="i.RotateCw" [size]="18" /> }Actualizar
+      </button>
       @if (auth.isAdmin()) {
         <button type="button" class="btn btn--secondary" [class.is-loading]="seeding()" [disabled]="seeding()" (click)="loadDemo()">
           @if (seeding()) { <span class="spinner"></span>Cargando… } @else { <app-icon [icon]="i.RefreshCw" [size]="18" />Datos de demostración }

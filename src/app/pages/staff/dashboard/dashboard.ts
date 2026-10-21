@@ -1,6 +1,7 @@
+import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Briefcase, ChartColumn, FileText, Info, Plus, RefreshCw, Sparkles, TriangleAlert, Users } from 'lucide-angular';
+import { Briefcase, ChartColumn, FileText, Info, Plus, RefreshCw, RotateCw, Sparkles, TriangleAlert, Users } from 'lucide-angular';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -38,7 +39,7 @@ export function averageScore(perJob: { applications: number; average_score: numb
 
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink, LabelPipe, Icon],
+  imports: [RouterLink, DatePipe, LabelPipe, Icon],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
@@ -49,7 +50,7 @@ export class Dashboard {
   private readonly toasts = inject(ToastService);
   protected readonly auth = inject(AuthService);
 
-  protected readonly i = { Briefcase, ChartColumn, FileText, Info, Plus, RefreshCw, Sparkles, TriangleAlert, Users };
+  protected readonly i = { Briefcase, ChartColumn, FileText, Info, Plus, RefreshCw, RotateCw, Sparkles, TriangleAlert, Users };
   protected readonly tones = ['avatar', 'avatar avatar--b', 'avatar avatar--g', 'avatar avatar--a'];
   protected readonly statusBadge = statusBadge;
   protected readonly tone = scoreTone;
@@ -61,6 +62,9 @@ export class Dashboard {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly seeding = signal(false);
+  protected readonly refreshing = signal(false);
+  /** When the numbers on screen were read from the server. */
+  protected readonly updatedAt = signal<Date | null>(null);
   protected readonly initials = initials;
 
   protected readonly firstName = computed(() => this.auth.user()?.name.split(' ')[0] ?? '');
@@ -133,16 +137,20 @@ export class Dashboard {
 
   protected load(): void {
     this.error.set(null);
+    this.refreshing.set(true);
     forkJoin({ stats: this.statsApi.get(), jobs: this.jobsApi.list() }).subscribe({
       next: ({ stats, jobs }) => {
         this.stats.set(stats);
         this.jobs.set(jobs);
         this.loading.set(false);
+        this.refreshing.set(false);
+        this.updatedAt.set(new Date());
         this.loadTopCandidates(stats);
       },
       error: (e) => {
         this.error.set(errorMessage(e));
         this.loading.set(false);
+        this.refreshing.set(false);
       },
     });
   }
