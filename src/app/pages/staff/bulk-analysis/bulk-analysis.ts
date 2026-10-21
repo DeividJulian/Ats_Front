@@ -9,6 +9,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { errorMessage, initials } from '../../../core/utils/http-error';
 import { AnalysisJob, EducationKey, ResumeInput, ResumeResult } from '../../../core/workers/cv-analysis.logic';
 import { AnalysisMode, AnalysisRun, CvAnalysisService } from '../../../core/workers/cv-analysis.service';
+import { csvFileName, downloadCsv, toCsv } from '../../../core/utils/csv';
 import { Icon } from '../../../shared/icon';
 import { LabelPipe } from '../../../shared/label.pipe';
 import { scoreTone } from '../../../shared/score-bar';
@@ -25,15 +26,12 @@ export function parsePastedResumes(text: string): ResumeInput[] {
 
 /** CSV (separated by ";" so Excel in Spanish opens it in columns) with the best results. */
 export function resultsToCsv(results: ResumeResult[]): string {
-  const cell = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
   const header = ['Posición', 'Nombre', 'Puntaje', 'Clasificación', 'Años de experiencia', 'Coinciden', 'Inferidas', 'Faltan'];
   const labels: Record<string, string> = { high: 'Alto', medium: 'Medio', low: 'Bajo' };
-  const rows = results.map((r, i) =>
-    [i + 1, r.name, r.score, labels[r.classification], r.years, r.matched.join(', '), r.inferred.join(', '), r.missing.join(', ')]
-      .map(cell)
-      .join(';'),
+  return toCsv(
+    header,
+    results.map((r, i) => [i + 1, r.name, r.score, labels[r.classification], r.years, r.matched.join(', '), r.inferred.join(', '), r.missing.join(', ')]),
   );
-  return [header.map(cell).join(';'), ...rows].join('\r\n');
 }
 
 type Source = 'synthetic' | 'system' | 'pasted';
@@ -200,13 +198,7 @@ export class BulkAnalysis implements OnInit {
   protected exportCsv(): void {
     const run = this.latest();
     if (!run) return;
-    // The BOM makes Excel read the accents correctly
-    const blob = new Blob(['﻿' + resultsToCsv(run.output.top)], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `analisis-${this.selectedJob()?.title ?? 'vacante'}.csv`.replace(/\s+/g, '-').toLowerCase();
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadCsv(csvFileName('analisis', this.selectedJob()?.title ?? 'vacante'), resultsToCsv(run.output.top));
   }
+
 }
