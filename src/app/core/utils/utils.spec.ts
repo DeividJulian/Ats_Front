@@ -64,7 +64,6 @@ describe('small helpers', () => {
     expect(pipe.transform('skills', 'breakdown')).toBe('Habilidades');
     expect(pipe.transform('gemini', 'aiProvider')).toBe('Gemini');
     expect(pipe.transform('groq', 'aiProvider')).toBe('Groq');
-    expect(pipe.transform('anthropic', 'aiProvider')).toBe('Claude');
     expect(pipe.transform('', 'aiProvider')).toBe('la IA');
     expect(educationLabel('masters')).toBe('Maestría');
     expect(educationLabel(null)).toBe('No indicado');
