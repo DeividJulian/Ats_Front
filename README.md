@@ -27,12 +27,23 @@ El código está en inglés; todo lo que ve el usuario está en español.
 
 ### Inicio de sesión
 
-No hay contraseñas. En **Iniciar sesión** la persona escribe su correo y le llega un código de 6 dígitos para entrar; en **Crear cuenta** (solo candidatos) escribe su nombre y correo, y el código activa la cuenta. El paso del código es un componente compartido (`pages/auth/code-step.ts`): se envía solo al pegar los 6 dígitos, tiene botón para abrir Gmail u Outlook, botón para reenviar y una cuenta regresiva de 30 segundos, la misma espera que exige el backend. Si el correo no tiene cuenta, el login ofrece crearla con ese mismo correo.
+No hay contraseñas (salvo las dos cuentas demo, abajo). En **Iniciar sesión** la persona escribe su correo y le llega un código de 6 dígitos para entrar; en **Crear cuenta** (solo candidatos) escribe su nombre y correo, y el código activa la cuenta. El paso del código es un componente compartido (`pages/auth/code-step.ts`): se envía solo al pegar los 6 dígitos, tiene botón para abrir Gmail u Outlook, botón para reenviar y una cuenta regresiva de 30 segundos, la misma espera que exige el backend. Si el correo no tiene cuenta, el login ofrece crearla con ese mismo correo.
 
 - `AuthService` guarda la sesión en `localStorage` (si el navegador lo bloquea, dura hasta recargar) y la descarta si el token ya venció. Al abrir la app confirma la sesión con `GET /auth/me`.
 - El interceptor agrega `Authorization: Bearer <token>` solo a las peticiones del backend y, ante un 401 fuera de las pantallas de login, cierra la sesión y lleva al login.
 - `authGuard`, `roleGuard` y `guestGuard` protegen las rutas según la sesión y el rol.
 - Al cerrar sesión se borran las respuestas del API que guardó el Service Worker, para que otra persona no las vea en ese navegador.
+
+#### Cuentas demo
+
+Si el backend tiene `DEMO_LOGIN=true`, el login muestra **"Entrar con una cuenta demo"** y se entra con correo y contraseña:
+
+| Correo | Contraseña | Rol |
+|---|---|---|
+| `administrador@gmail.com` | `demo 123` | Administrador |
+| `usuario@gmail.com` | `demo 123` | Candidato |
+
+Esos correos nunca reciben códigos: si alguien pide uno con ellos, el login pasa directo al formulario de contraseña. Con `DEMO_LOGIN=false` el enlace no aparece. Como la contraseña es pública, actívalo solo para presentar.
 
 ### Otros detalles
 
@@ -93,7 +104,7 @@ Abre http://localhost:4200. En local el front usa `http://127.0.0.1:8001`; publi
 npm test -- --watch=false
 ```
 
-147 pruebas: sesión, interceptor y guardas de rutas (incluida la de cambios sin guardar), servicios de la API, lógica del análisis (con los mismos casos que el backend), workers y cachés, paso del código, páginas (inicio, login, registro, vacante pública, panel, usuarios, 404), exportaciones a CSV, tema, avisos y utilidades.
+152 pruebas: sesión (incluido el acceso demo), interceptor y guardas de rutas (incluida la de cambios sin guardar), servicios de la API, lógica del análisis (con los mismos casos que el backend), workers y cachés, paso del código, páginas (inicio, login, registro, vacante pública, panel, usuarios, 404), exportaciones a CSV, tema, avisos y utilidades.
 
 ## Desplegar en Vercel
 
