@@ -133,6 +133,56 @@ describe('Login page', () => {
     expect(link.getAttribute('href')).toContain('email=nuevo@mail.com');
   });
 
+  it('hides the demo access when the server has it off', async () => {
+    const { backend, fixture, page } = open();
+    fixture.detectChanges();
+    backend.expectOne(`${API_URL}/auth/demo`).flush({ enabled: false });
+    await fixture.whenStable();
+    expect(page.textContent).not.toContain('Entrar con una cuenta demo');
+  });
+
+  it('enters with a demo account and its password', async () => {
+    const { backend, fixture, page } = open();
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    fixture.detectChanges();
+    backend.expectOne(`${API_URL}/auth/demo`).flush({ enabled: true });
+    await fixture.whenStable();
+    const open_demo = [...page.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('cuenta demo'))!;
+    open_demo.click();
+    await fixture.whenStable();
+    expect(page.textContent).toContain('demo 123');
+
+    const email = page.querySelector<HTMLInputElement>('#dm-mail')!;
+    email.value = 'Administrador@Gmail.com';
+    email.dispatchEvent(new Event('input'));
+    const password = page.querySelector<HTMLInputElement>('#dm-pass')!;
+    password.value = 'demo 123';
+    password.dispatchEvent(new Event('input'));
+    page.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+
+    const req = backend.expectOne(`${API_URL}/auth/demo-login`);
+    expect(req.request.body).toEqual({ email: 'administrador@gmail.com', password: 'demo 123' });
+    req.flush({ access_token: fakeToken(Math.floor(Date.now() / 1000) + 3600), token_type: 'bearer', user: { ...USER, role: 'admin' } });
+    await fixture.whenStable();
+    expect(navigate).toHaveBeenCalledWith('/app');
+  });
+
+  it('a demo email asking for a code goes to the password form', async () => {
+    const { backend, fixture, page } = open();
+    fixture.detectChanges();
+    backend.expectOne(`${API_URL}/auth/demo`).flush({ enabled: true });
+    await fixture.whenStable();
+    const input = page.querySelector<HTMLInputElement>('input[type=email]')!;
+    input.value = 'usuario@gmail.com';
+    input.dispatchEvent(new Event('input'));
+    page.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+    backend.expectOne(`${API_URL}/auth/login`).flush({ detail: 'Es una cuenta demo: entra con su contraseña' }, { status: 409, statusText: 'Conflict' });
+    await fixture.whenStable();
+    expect(page.querySelector<HTMLInputElement>('#dm-mail')!.value).toBe('usuario@gmail.com');
+    expect(page.querySelector('#dm-pass')).not.toBeNull();
+  });
+
   it('the sign-up page starts with the email that came from the login', async () => {
     setup();
     const fixture = TestBed.createComponent(Register);
@@ -157,12 +207,18 @@ describe('Login page', () => {
     expect((again.nativeElement as HTMLElement).querySelector<HTMLInputElement>('input[type=email]')!.value).toBe('laura@empresa.com');
   });
 
-  it('has no demo account buttons', async () => {
+  it('has no one-click demo buttons: the demo accounts need their password', async () => {
     const { backend, fixture, page } = open();
+    fixture.detectChanges();
+    backend.expectOne(`${API_URL}/auth/demo`).flush({ enabled: true });
     await fixture.whenStable();
     expect(page.querySelectorAll('.demo button')).toHaveLength(0);
-    expect(page.textContent).not.toContain('Demo');
-    backend.expectNone(`${API_URL}/auth/demo`);
+    [...page.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('cuenta demo'))!.click();
+    await fixture.whenStable();
+    page.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+    await fixture.whenStable();
+    expect(page.textContent).toContain('Escribe la contraseña');
+    backend.expectNone(`${API_URL}/auth/demo-login`);
   });
 });
 

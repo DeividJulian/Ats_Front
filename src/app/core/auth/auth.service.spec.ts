@@ -70,6 +70,27 @@ describe('AuthService', () => {
     expect(JSON.parse(localStorage.getItem(USER_KEY)!).name).toBe('Laura Gómez');
   });
 
+  it('asks the server whether the demo accounts are on', () => {
+    const { auth, http } = setup();
+    const answers: boolean[] = [];
+    auth.demoEnabled().subscribe((v) => answers.push(v));
+    http.expectOne(`${API_URL}/auth/demo`).flush({ enabled: true });
+    auth.demoEnabled().subscribe((v) => answers.push(v));
+    http.expectOne(`${API_URL}/auth/demo`).flush({}, { status: 503, statusText: 'Unavailable' });
+    expect(answers).toEqual([true, false]);
+  });
+
+  it('a demo account enters with its password and keeps the session', () => {
+    const { auth, http } = setup();
+    const token = fakeToken(inOneHour());
+    auth.demoLogin('administrador@gmail.com', 'demo 123').subscribe();
+    const req = http.expectOne(`${API_URL}/auth/demo-login`);
+    expect(req.request.body).toEqual({ email: 'administrador@gmail.com', password: 'demo 123' });
+    req.flush({ access_token: token, token_type: 'bearer', user: { ...USER, role: 'admin' } } satisfies TokenResponse);
+    expect(auth.isAdmin()).toBe(true);
+    expect(localStorage.getItem(TOKEN_KEY)).toBe(token);
+  });
+
   it('a wrong code leaves no session', () => {
     const { auth, http } = setup();
     auth.verify('laura@empresa.com', '000000').subscribe({ error: () => undefined });
