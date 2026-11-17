@@ -36,14 +36,14 @@ No hay contraseñas (salvo las dos cuentas demo, abajo). En **Iniciar sesión** 
 
 #### Cuentas demo
 
-Si el backend tiene `DEMO_LOGIN=true`, el login muestra **"Entrar con una cuenta demo"** y se entra con correo y contraseña:
+El login muestra **"Entrar con una cuenta demo"** y se entra con correo y contraseña:
 
 | Correo | Contraseña | Rol |
 |---|---|---|
 | `administrador@gmail.com` | `demo 123` | Administrador |
 | `usuario@gmail.com` | `demo 123` | Candidato |
 
-Esos correos nunca reciben códigos: si alguien pide uno con ellos, el login pasa directo al formulario de contraseña. Con `DEMO_LOGIN=false` el enlace no aparece. Como la contraseña es pública, actívalo solo para presentar.
+Esos correos nunca reciben códigos: si alguien pide uno con ellos, el login pasa directo al formulario de contraseña. Están activas por defecto; si el backend tiene `DEMO_LOGIN=false`, el enlace no aparece.
 
 ### Otros detalles
 
