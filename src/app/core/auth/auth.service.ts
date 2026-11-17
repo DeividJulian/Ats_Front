@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, map, tap } from 'rxjs';
+import { Observable, catchError, map, of, tap } from 'rxjs';
 
 import { API_URL } from '../config/api.config';
 import { CodeSent, RegisterInput, Role, TokenResponse, User } from '../models';
@@ -91,6 +91,21 @@ export class AuthService {
   verify(email: string, code: string): Observable<User> {
     return this.http
       .post<TokenResponse>(`${this.url}/verify`, { email, code })
+      .pipe(tap((r) => this.save(r)), map((r) => r.user));
+  }
+
+  /** Whether the server has the demo accounts turned on (DEMO_LOGIN). Any error counts as no. */
+  demoEnabled(): Observable<boolean> {
+    return this.http.get<{ enabled: boolean }>(`${this.url}/demo`).pipe(
+      map((r) => r.enabled === true),
+      catchError(() => of(false)),
+    );
+  }
+
+  /** Demo accounts are the only ones with a password; they never receive emails. */
+  demoLogin(email: string, password: string): Observable<User> {
+    return this.http
+      .post<TokenResponse>(`${this.url}/demo-login`, { email, password })
       .pipe(tap((r) => this.save(r)), map((r) => r.user));
   }
 

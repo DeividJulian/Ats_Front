@@ -1,8 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, input, signal } from '@angular/core';
+import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { ChartColumn, CircleAlert, Clock, FileText, ListOrdered, Mail, ShieldCheck } from 'lucide-angular';
+import { ChartColumn, CircleAlert, Clock, FileText, KeyRound, ListOrdered, Mail, ShieldCheck } from 'lucide-angular';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { User } from '../../core/models';
@@ -12,6 +12,8 @@ import { afterLoginUrl } from './auth-redirect';
 import { CodeStep } from './code-step';
 
 export const LAST_EMAIL_KEY = 'ats.lastEmail';
+/** Shown on the demo form; the server only accepts them with DEMO_LOGIN=true. */
+export const DEMO_ACCOUNTS = ['administrador@gmail.com', 'usuario@gmail.com'];
 
 /** The email used last time on this browser, to save typing it again. */
 export function rememberedEmail(): string {
@@ -29,7 +31,7 @@ export function rememberedEmail(): string {
   templateUrl: './login.html',
   styleUrl: './auth.css',
 })
-export class Login {
+export class Login implements OnInit {
   /** Query parameters: page to return to, and whether the previous session expired */
   readonly redirect = input<string>();
   readonly expired = input<string>();
@@ -37,17 +39,28 @@ export class Login {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
-  protected readonly i = { ChartColumn, CircleAlert, Clock, FileText, ListOrdered, Mail, ShieldCheck };
-  protected readonly step = signal<'email' | 'code'>('email');
+  protected readonly i = { ChartColumn, CircleAlert, Clock, FileText, KeyRound, ListOrdered, Mail, ShieldCheck };
+  protected readonly step = signal<'email' | 'code' | 'demo'>('email');
   protected readonly email = signal('');
   protected readonly sending = signal(false);
   protected readonly error = signal<string | null>(null);
   /** The email had no account (404): offer to create one with it. */
   protected readonly noAccount = signal(false);
+  protected readonly demoAvailable = signal(false);
+  protected readonly demoAccounts = DEMO_ACCOUNTS;
 
   protected readonly form = inject(NonNullableFormBuilder).group({
     email: [rememberedEmail(), [Validators.required, Validators.email]],
   });
+
+  protected readonly demoForm = inject(NonNullableFormBuilder).group({
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', Validators.required],
+  });
+
+  ngOnInit(): void {
+    this.auth.demoEnabled().subscribe((enabled) => this.demoAvailable.set(enabled));
+  }
 
   protected bad(): boolean {
     const control = this.form.controls.email;
@@ -78,6 +91,38 @@ export class Login {
         this.sending.set(false);
         this.error.set(errorMessage(e));
         this.noAccount.set(e instanceof HttpErrorResponse && e.status === 404);
+        // A demo account never gets a code: it goes straight to its password
+        if (e instanceof HttpErrorResponse && e.status === 409 && this.demoAvailable()) this.openDemo(email);
+      },
+    });
+  }
+
+  protected openDemo(email = ''): void {
+    this.demoForm.reset({ email, password: '' });
+    this.step.set('demo');
+  }
+
+  protected backToEmail(): void {
+    this.error.set(null);
+    this.step.set('email');
+  }
+
+  protected submitDemo(): void {
+    if (this.demoForm.invalid) {
+      this.demoForm.markAllAsTouched();
+      return;
+    }
+    const { email, password } = this.demoForm.getRawValue();
+    this.sending.set(true);
+    this.error.set(null);
+    this.auth.demoLogin(email.trim().toLowerCase(), password).subscribe({
+      next: (user) => {
+        this.sending.set(false);
+        this.enter(user);
+      },
+      error: (e) => {
+        this.sending.set(false);
+        this.error.set(errorMessage(e));
       },
     });
   }
