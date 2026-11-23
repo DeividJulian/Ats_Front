@@ -40,8 +40,8 @@ El login muestra **"Entrar con una cuenta demo"** y se entra con correo y contra
 
 | Correo | Contraseña | Rol |
 |---|---|---|
-| `administrador@gmail.com` | `demo 123` | Administrador |
-| `usuario@gmail.com` | `demo 123` | Candidato |
+| `administrador@gmail.com` | `demo123` | Administrador |
+| `usuario@gmail.com` | `demo123` | Candidato |
 
 Esos correos nunca reciben códigos: si alguien pide uno con ellos, el login pasa directo al formulario de contraseña. Están activas por defecto; si el backend tiene `DEMO_LOGIN=false`, el enlace no aparece.
 

@@ -83,9 +83,9 @@ describe('AuthService', () => {
   it('a demo account enters with its password and keeps the session', () => {
     const { auth, http } = setup();
     const token = fakeToken(inOneHour());
-    auth.demoLogin('administrador@gmail.com', 'demo 123').subscribe();
+    auth.demoLogin('administrador@gmail.com', 'demo123').subscribe();
     const req = http.expectOne(`${API_URL}/auth/demo-login`);
-    expect(req.request.body).toEqual({ email: 'administrador@gmail.com', password: 'demo 123' });
+    expect(req.request.body).toEqual({ email: 'administrador@gmail.com', password: 'demo123' });
     req.flush({ access_token: token, token_type: 'bearer', user: { ...USER, role: 'admin' } } satisfies TokenResponse);
     expect(auth.isAdmin()).toBe(true);
     expect(localStorage.getItem(TOKEN_KEY)).toBe(token);

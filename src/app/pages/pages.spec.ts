@@ -151,18 +151,18 @@ describe('Login page', () => {
     const open_demo = [...page.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('cuenta demo'))!;
     open_demo.click();
     await fixture.whenStable();
-    expect(page.textContent).toContain('demo 123');
+    expect(page.textContent).toContain('demo123');
 
     const email = page.querySelector<HTMLInputElement>('#dm-mail')!;
     email.value = 'Administrador@Gmail.com';
     email.dispatchEvent(new Event('input'));
     const password = page.querySelector<HTMLInputElement>('#dm-pass')!;
-    password.value = 'demo 123';
+    password.value = 'demo123';
     password.dispatchEvent(new Event('input'));
     page.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
 
     const req = backend.expectOne(`${API_URL}/auth/demo-login`);
-    expect(req.request.body).toEqual({ email: 'administrador@gmail.com', password: 'demo 123' });
+    expect(req.request.body).toEqual({ email: 'administrador@gmail.com', password: 'demo123' });
     req.flush({ access_token: fakeToken(Math.floor(Date.now() / 1000) + 3600), token_type: 'bearer', user: { ...USER, role: 'admin' } });
     await fixture.whenStable();
     expect(navigate).toHaveBeenCalledWith('/app');
