@@ -43,7 +43,7 @@ El login muestra **"Entrar con una cuenta demo"** y se entra con correo y contra
 | `administrador@gmail.com` | `demo123` | Administrador |
 | `usuario@gmail.com` | `demo123` | Candidato |
 
-Esos correos nunca reciben códigos: si alguien pide uno con ellos, el login pasa directo al formulario de contraseña. Están activas por defecto; si el backend tiene `DEMO_LOGIN=false`, el enlace no aparece.
+Esos correos nunca reciben códigos: si alguien pide uno con ellos, el login pasa directo al formulario de contraseña. Están activas por defecto; si el backend tiene `DEMO_LOGIN=false`, el enlace no aparece. La contraseña es `demo123`, sin espacios. Deben seguir activas hasta el 30 de noviembre de 2026, mientras se califica el proyecto.
 
 ### Otros detalles
 
